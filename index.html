@@ -1,53 +1,68 @@
-<div class="main">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polytrack Copy</title>
+    
+    <!-- Vercel Web Analytics -->
+    <script type="module">
+      import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@1/dist/index.mjs';
+      inject();
+    </script>
+    
+    <style>
+        /* aahhh: css inside of html */
+        .main {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            margin: auto;
+            width: 50%;
+            padding: 10px;
+            height: 100vh;
+        }
 
-    <h1>Polytrack Copy</h1>
+        .main h1 {
+            width: 100%;
+            text-align: center;
+        }
 
-    <h2>Please choose the archive version to load:</h2>
-    <div class="versions">
-        <a href="/0.3.1/">v0.3.1</a>
-<a href="/0.5.0/">v0.5.0</a>
+        .versions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px 0;
+        }
+
+        .versions a {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #0f2051, #112052);
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .versions a:hover {
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+
+        <h1>Polytrack Copy</h1>
+
+        <h2>Please choose the archive version to load:</h2>
+        <div class="versions">
+            <a href="/0.3.1/">v0.3.1</a>
+            <a href="/0.5.0/">v0.5.0</a>
+        </div>
+
     </div>
-
-</div>
-
-
-<style>
-    /* aahhh: css inside of html */
-    .main {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        margin: auto;
-        width: 50%;
-        padding: 10px;
-        height: 100vh;
-    }
-
-    .main h1 {
-        width: 100%;
-        text-align: center;
-    }
-
-    .versions {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        padding: 16px 0;
-    }
-
-    .versions a {
-        display: inline-block;
-        padding: 12px 20px;
-        border-radius: 8px;
-        background: linear-gradient(90deg, #0f2051, #112052);
-        color: white;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .versions a:hover {
-        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
-    }
-</style>
+</body>
+</html>
