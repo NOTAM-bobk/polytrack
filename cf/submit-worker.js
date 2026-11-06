@@ -16,21 +16,21 @@ const RATE_WINDOW_MS = 10 * 60 * 1000;
 const RATE_MAX = 5;
 const LIST_LIMIT = 200;
 
+/* The hub and every subdomain of it may post; local dev ports are allowed so
+   the page can be tested without deploying. */
 const BASE_ORIGINS = [
-    "https://edugame.benlaunches.icu",
-    "https://submitu.benlaunches.icu",
-    "https://benlaunches.icu",
     "http://localhost:3002",
     "http://127.0.0.1:3002",
     "http://localhost:8080",
     "http://127.0.0.1:8080"
 ];
 
+const HUB = /^https:\/\/([a-z0-9-]+\.)?benlaunches\.icu$/;
 const STYLE_DEV = /^https:\/\/[a-z0-9-]+\.style\.dev$/;
 
 function corsHeaders(request) {
     const origin = request.headers.get("Origin") || "";
-    const allowed = BASE_ORIGINS.includes(origin) || STYLE_DEV.test(origin);
+    const allowed = BASE_ORIGINS.includes(origin) || HUB.test(origin) || STYLE_DEV.test(origin);
     const headers = {
         Vary: "Origin",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
