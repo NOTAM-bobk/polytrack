@@ -25,7 +25,7 @@
             --slate: #9aa0bd;
             --hairline: #333a5f;
             --signal: #f7c24b;
-            --archived-ink: #767c9c;
+            --dock-surface: rgba(24, 27, 45, 0.94);
             --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
             --font-ui: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
         }
@@ -84,11 +84,11 @@
             min-height: 100vh;
             width: min(680px, 100% - 40px);
             margin-inline: auto;
-            padding-block: clamp(40px, 8vh, 88px);
+            padding-block: clamp(56px, 10vh, 96px) 124px;
         }
 
-        .masthead h1 {
-            margin: 0 0 0.25em;
+        h1 {
+            margin: 0 0 clamp(28px, 5.5vh, 48px);
             font-family: var(--font-display);
             font-size: clamp(2.6rem, 8.5vw, 4.25rem);
             font-weight: 700;
@@ -97,27 +97,15 @@
             text-wrap: balance;
         }
 
-        .masthead p {
-            margin: 0;
-            max-width: 46ch;
-            color: var(--slate);
-            font-size: 0.95rem;
-            line-height: 1.55;
+        .group + .group {
+            margin-top: clamp(26px, 4.5vh, 40px);
         }
 
-        .group {
-            margin-top: clamp(28px, 5vh, 44px);
-        }
-
-        .group__head {
+        .group h2 {
             display: flex;
             align-items: baseline;
             gap: 16px;
-            margin-bottom: 14px;
-        }
-
-        .group__head h2 {
-            margin: 0;
+            margin: 0 0 12px;
             font-family: var(--font-display);
             font-size: 1.55rem;
             font-weight: 600;
@@ -125,7 +113,7 @@
             white-space: nowrap;
         }
 
-        .group__head::after {
+        .group h2::after {
             content: "";
             flex: 1;
             height: 1px;
@@ -142,11 +130,12 @@
         }
 
         .lane {
-            display: grid;
-            grid-template-columns: auto 1fr auto;
+            display: flex;
             align-items: center;
-            gap: 8px 20px;
-            padding: 15px 20px;
+            justify-content: space-between;
+            gap: 20px;
+            min-height: 56px;
+            padding: 14px 20px;
             border: 1px solid var(--hairline);
             border-left-width: 3px;
             border-radius: 3px;
@@ -156,10 +145,31 @@
             transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
         }
 
+        .lane__name {
+            font-family: var(--font-display);
+            font-size: 1.45rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            line-height: 1.15;
+        }
+
+        .lane__play {
+            width: 0;
+            height: 0;
+            border-left: 9px solid var(--slate);
+            border-top: 5.5px solid transparent;
+            border-bottom: 5.5px solid transparent;
+            transition: border-left-color 0.18s ease;
+        }
+
         a.lane:hover {
             border-color: #545e93;
             border-left-color: var(--signal);
             background: linear-gradient(180deg, #28305a, #212748);
+        }
+
+        a.lane:hover .lane__play {
+            border-left-color: var(--signal);
         }
 
         a.lane:active {
@@ -171,99 +181,107 @@
             outline-offset: 3px;
         }
 
-        .lane__version {
-            display: flex;
-            align-items: baseline;
-            gap: 3px;
-            font-family: var(--font-display);
-            font-size: 1.7rem;
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 0.01em;
-            line-height: 1.1;
-        }
-
-        .lane__v {
-            color: var(--slate);
-            font-size: 0.62em;
-            font-weight: 500;
-        }
-
-        .lane__meta {
-            color: var(--slate);
-            font-size: 0.9rem;
-        }
-
-        .lane__go {
-            display: inline-flex;
-            align-items: center;
-            gap: 9px;
-            padding: 7px 14px 7px 13px;
-            border: 1px solid #414a7d;
-            border-radius: 3px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            white-space: nowrap;
-        }
-
-        .lane__go::before {
-            content: "";
-            width: 0;
-            height: 0;
-            border-left: 7px solid currentColor;
-            border-top: 4.5px solid transparent;
-            border-bottom: 4.5px solid transparent;
-            color: var(--signal);
-        }
-
         /* archived build: kept on the list, not offered */
         .lane--archived {
             border-color: #262b48;
             border-left-color: #2e3455;
             background: linear-gradient(180deg, #1b1e33, #181b2d);
-            color: var(--archived-ink);
+            color: #7b82a1;
             cursor: not-allowed;
         }
 
-        .lane--archived .lane__version {
-            color: #838aa8;
+        /* bottom menu bar */
+        .dock {
+            position: fixed;
+            left: 50%;
+            bottom: 20px;
+            z-index: 20;
+            transform: translateX(-50%);
         }
 
-        .lane--archived .lane__meta,
-        .lane--archived .lane__v {
-            color: #6b7291;
+        .dock__tip {
+            position: absolute;
+            left: 0;
+            bottom: calc(100% + 3px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 28px;
+            padding: 0 12px;
+            border: 1px solid rgba(51, 58, 95, 0.9);
+            border-radius: 8px;
+            background: var(--dock-surface);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+            color: var(--chalk);
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.15;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out, left 0.3s ease-in-out;
         }
 
-        .lane--archived .lane__go {
-            border-color: #2d3252;
-            color: #6b7291;
+        .dock__tip.is-visible {
+            opacity: 1;
+            transform: none;
         }
 
-        .lane--archived .lane__go::before {
-            display: none;
+        .dock__bar {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 40px;
+            padding: 0 6px;
+            border: 1px solid rgba(51, 58, 95, 0.9);
+            border-radius: 999px;
+            background: var(--dock-surface);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 16px -4px rgba(0, 0, 0, 0.35);
+        }
+
+        .dock__bar button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: 0;
+            border-radius: 999px;
+            background: transparent;
+            color: var(--slate);
+            cursor: pointer;
+            transition: background-color 0.18s ease, color 0.18s ease;
+        }
+
+        .dock__bar button:hover,
+        .dock__bar button:focus-visible {
+            background: rgba(44, 51, 84, 0.9);
+            color: var(--chalk);
+        }
+
+        .dock__bar button:focus-visible {
+            outline: 2px solid var(--signal);
+            outline-offset: 1px;
+        }
+
+        .dock__bar svg {
+            display: block;
+            width: 18px;
+            height: 18px;
         }
 
         @media (max-width: 540px) {
             .lane {
-                grid-template-columns: 1fr auto;
-                row-gap: 2px;
-                padding: 14px 16px;
+                min-height: 52px;
+                padding: 12px 16px;
             }
 
-            .lane__version {
-                grid-column: 1;
-            }
-
-            .lane__meta {
-                grid-column: 1;
-                grid-row: 2;
-                font-size: 0.85rem;
-            }
-
-            .lane__go {
-                grid-column: 2;
-                grid-row: 1 / span 2;
+            .lane__name {
+                font-size: 1.3rem;
             }
         }
 
@@ -289,47 +307,146 @@
     </svg>
 
     <main class="screen">
-        <header class="masthead">
-            <h1>Education Games</h1>
-            <p>Playable copies of older builds, kept around in case the originals go down. Online scores and servers don't work in the archives.</p>
-        </header>
+        <h1>Education Games</h1>
 
         <section class="group" aria-labelledby="polytrack">
-            <div class="group__head">
-                <h2 id="polytrack">PolyTrack</h2>
-            </div>
+            <h2 id="polytrack">PolyTrack</h2>
             <ul class="lanes">
                 <li>
                     <div class="lane lane--archived" aria-disabled="true">
-                        <span class="lane__version"><span class="lane__v">v</span>0.3.1</span>
-                        <span class="lane__meta">Development stopped &middot; replays break after a run</span>
-                        <span class="lane__go">Archived</span>
+                        <span class="lane__name">v0.3.1</span>
                     </div>
                 </li>
                 <li>
                     <a class="lane" href="https://poly2.benlaunches.icu/0.5.0/index.html">
-                        <span class="lane__version"><span class="lane__v">v</span>0.5.0</span>
-                        <span class="lane__meta">Maintained &middot; AI replay tooling</span>
-                        <span class="lane__go">Play</span>
+                        <span class="lane__name">v0.5.0</span>
+                        <span class="lane__play" aria-hidden="true"></span>
                     </a>
                 </li>
             </ul>
         </section>
 
         <section class="group" aria-labelledby="cookie-clicker">
-            <div class="group__head">
-                <h2 id="cookie-clicker">Cookie Clicker</h2>
-            </div>
+            <h2 id="cookie-clicker">Cookie Clicker</h2>
             <ul class="lanes">
                 <li>
                     <a class="lane" href="https://cookie.benlaunches.icu/">
-                        <span class="lane__version">Cookie Clicker</span>
-                        <span class="lane__meta">Bake cookies, buy upgrades, repeat</span>
-                        <span class="lane__go">Play</span>
+                        <span class="lane__name">Cookie Clicker</span>
+                        <span class="lane__play" aria-hidden="true"></span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section class="group" aria-labelledby="eaglercraft">
+            <h2 id="eaglercraft">Eaglercraft</h2>
+            <ul class="lanes">
+                <li>
+                    <a class="lane" href="https://eaglercraft.com/play">
+                        <span class="lane__name">Eaglercraft</span>
+                        <span class="lane__play" aria-hidden="true"></span>
                     </a>
                 </li>
             </ul>
         </section>
     </main>
+
+    <nav class="dock" aria-label="Main">
+        <div class="dock__tip" id="dock-tip" aria-hidden="true"></div>
+        <div class="dock__bar">
+            <button type="button" aria-label="Messages">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+                        <path d="M9,1.75C4.996,1.75,1.75,4.996,1.75,9c0,1.319,.358,2.552,.973,3.617,.43,.806-.053,2.712-.973,3.633,1.25,.068,2.897-.497,3.633-.973,.489,.282,1.264,.656,2.279,.848,.433,.082,.881,.125,1.338,.125,4.004,0,7.25-3.246,7.25-7.25S13.004,1.75,9,1.75Z" />
+                    </g>
+                </svg>
+            </button>
+            <button type="button" aria-label="Mail">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+                        <path d="M1.75,5.75l6.767,3.733c.301,.166,.665,.166,.966,0l6.767-3.733" />
+                        <rect x="1.75" y="3.25" width="14.5" height="11.5" rx="2" ry="2" transform="translate(18 18) rotate(180)" />
+                    </g>
+                </svg>
+            </button>
+            <button type="button" aria-label="Explore">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+                        <line x1="3.75" y1="6.25" x2="15.25" y2="6.25" />
+                        <line x1="2.75" y1="11.75" x2="14.25" y2="11.75" />
+                        <line x1="7.633" y1="2.75" x2="5.289" y2="15.25" />
+                        <line x1="12.711" y1="2.75" x2="10.367" y2="15.25" />
+                    </g>
+                </svg>
+            </button>
+            <button type="button" aria-label="Share">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+                        <path d="M15.25,11.75v1.5c0,1.105-.895,2-2,2H4.75c-1.105,0-2-.895-2-2v-1.5" />
+                        <polyline points="12.5 6.25 9 2.75 5.5 6.25" />
+                        <line x1="9" y1="2.75" x2="9" y2="10.25" />
+                    </g>
+                </svg>
+            </button>
+            <button type="button" aria-label="Write">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+                        <path d="M13.974,9.731c-.474,3.691-3.724,4.113-6.974,3.519" />
+                        <path d="M3.75,16.25S5.062,4.729,16.25,3.75c-.56,.976-.573,2.605-.946,4.239-.524,2.011-2.335,2.261-4.554,2.261" />
+                        <line x1="4.25" y1="1.75" x2="4.25" y2="6.75" />
+                        <line x1="6.75" y1="4.25" x2="1.75" y2="4.25" />
+                    </g>
+                </svg>
+            </button>
+            <button type="button" aria-label="Menu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18" aria-hidden="true" focusable="false">
+                    <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" stroke="currentColor">
+                        <line x1="2.25" y1="9" x2="15.75" y2="9" />
+                        <line x1="2.25" y1="3.75" x2="15.75" y2="3.75" />
+                        <line x1="2.25" y1="14.25" x2="15.75" y2="14.25" />
+                    </g>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        (function () {
+            var bar = document.querySelector(".dock__bar");
+            var tip = document.getElementById("dock-tip");
+            if (!bar || !tip) return;
+
+            var buttons = Array.prototype.slice.call(bar.querySelectorAll("button"));
+
+            function showTip(button) {
+                tip.textContent = button.getAttribute("aria-label");
+
+                var barRect = bar.getBoundingClientRect();
+                var buttonRect = button.getBoundingClientRect();
+                var tipWidth = tip.getBoundingClientRect().width;
+                var left = buttonRect.left - barRect.left + (buttonRect.width - tipWidth) / 2;
+
+                tip.style.left = Math.max(0, Math.min(left, barRect.width - tipWidth)) + "px";
+                tip.classList.add("is-visible");
+            }
+
+            function hideTip() {
+                tip.classList.remove("is-visible");
+            }
+
+            // Buttons are intentionally inert for now - no click handlers attached.
+            buttons.forEach(function (button) {
+                button.addEventListener("mouseenter", function () {
+                    showTip(button);
+                });
+                button.addEventListener("focus", function () {
+                    showTip(button);
+                });
+                button.addEventListener("blur", hideTip);
+            });
+
+            bar.addEventListener("mouseleave", hideTip);
+        })();
+    </script>
 </body>
 </html>
