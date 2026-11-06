@@ -3,67 +3,333 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Polytrack Copy</title>
-    
+    <title>Education Games</title>
+
     <!-- Vercel Web Analytics -->
     <script type="module">
       import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@2/dist/index.mjs';
       inject();
     </script>
-    
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
         /* aahhh: css inside of html */
-        .main {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            margin: auto;
-            width: 50%;
-            padding: 10px;
-            height: 100vh;
+        :root {
+            --tarmac: #141628;
+            --panel: #1f2340;
+            --panel-top: #22274a;
+            --chalk: #eef0f8;
+            --slate: #9aa0bd;
+            --hairline: #333a5f;
+            --signal: #f7c24b;
+            --archived-ink: #767c9c;
+            --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+            --font-ui: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
         }
 
-        .main h1 {
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+            color: var(--chalk);
+            background:
+                radial-gradient(900px 520px at 20% -10%, #27315d 0%, rgba(39, 49, 93, 0) 62%),
+                radial-gradient(720px 440px at 98% 4%, #1b2a4e 0%, rgba(27, 42, 78, 0) 60%),
+                linear-gradient(180deg, #141628 0%, #101226 72%, #0d0f1e 100%);
+            font-family: var(--font-ui);
+            font-size: 16px;
+            line-height: 1.5;
+            color-scheme: dark;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* start/finish line across the top of the screen */
+        .start-line {
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 10px;
+            background-image: repeating-conic-gradient(
+                from 0deg,
+                rgba(238, 240, 248, 0.3) 0deg 90deg,
+                rgba(238, 240, 248, 0) 90deg 180deg
+            );
+            background-size: 20px 20px;
+        }
+
+        /* faceted low-poly horizon */
+        .terrain {
+            position: absolute;
+            inset: auto 0 0 0;
             width: 100%;
-            text-align: center;
+            height: clamp(150px, 30vh, 300px);
+            opacity: 0.85;
+            pointer-events: none;
         }
 
-        .versions {
+        .screen {
+            position: relative;
+            z-index: 1;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            padding: 16px 0;
+            justify-content: center;
+            min-height: 100vh;
+            width: min(680px, 100% - 40px);
+            margin-inline: auto;
+            padding-block: clamp(40px, 8vh, 88px);
         }
 
-        .versions a {
-            display: inline-block;
-            padding: 12px 20px;
-            border-radius: 8px;
-            background: linear-gradient(90deg, #0f2051, #112052);
-            color: white;
+        .masthead h1 {
+            margin: 0 0 0.25em;
+            font-family: var(--font-display);
+            font-size: clamp(2.6rem, 8.5vw, 4.25rem);
+            font-weight: 700;
+            line-height: 0.92;
+            letter-spacing: -0.005em;
+            text-wrap: balance;
+        }
+
+        .masthead p {
+            margin: 0;
+            max-width: 46ch;
+            color: var(--slate);
+            font-size: 0.95rem;
+            line-height: 1.55;
+        }
+
+        .group {
+            margin-top: clamp(28px, 5vh, 44px);
+        }
+
+        .group__head {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 14px;
+        }
+
+        .group__head h2 {
+            margin: 0;
+            font-family: var(--font-display);
+            font-size: 1.55rem;
             font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.005em;
+            white-space: nowrap;
         }
 
-        .versions a:hover {
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        .group__head::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--hairline);
+        }
+
+        .lanes {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .lane {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 8px 20px;
+            padding: 15px 20px;
+            border: 1px solid var(--hairline);
+            border-left-width: 3px;
+            border-radius: 3px;
+            background: linear-gradient(180deg, var(--panel-top), var(--panel));
+            color: inherit;
+            text-decoration: none;
+            transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.12s ease;
+        }
+
+        a.lane:hover {
+            border-color: #545e93;
+            border-left-color: var(--signal);
+            background: linear-gradient(180deg, #28305a, #212748);
+        }
+
+        a.lane:active {
+            transform: translateY(1px);
+        }
+
+        a.lane:focus-visible {
+            outline: 2px solid var(--signal);
+            outline-offset: 3px;
+        }
+
+        .lane__version {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            font-family: var(--font-display);
+            font-size: 1.7rem;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.01em;
+            line-height: 1.1;
+        }
+
+        .lane__v {
+            color: var(--slate);
+            font-size: 0.62em;
+            font-weight: 500;
+        }
+
+        .lane__meta {
+            color: var(--slate);
+            font-size: 0.9rem;
+        }
+
+        .lane__go {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            padding: 7px 14px 7px 13px;
+            border: 1px solid #414a7d;
+            border-radius: 3px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        .lane__go::before {
+            content: "";
+            width: 0;
+            height: 0;
+            border-left: 7px solid currentColor;
+            border-top: 4.5px solid transparent;
+            border-bottom: 4.5px solid transparent;
+            color: var(--signal);
+        }
+
+        /* archived build: kept on the list, not offered */
+        .lane--archived {
+            border-color: #262b48;
+            border-left-color: #2e3455;
+            background: linear-gradient(180deg, #1b1e33, #181b2d);
+            color: var(--archived-ink);
+            cursor: not-allowed;
+        }
+
+        .lane--archived .lane__version {
+            color: #838aa8;
+        }
+
+        .lane--archived .lane__meta,
+        .lane--archived .lane__v {
+            color: #6b7291;
+        }
+
+        .lane--archived .lane__go {
+            border-color: #2d3252;
+            color: #6b7291;
+        }
+
+        .lane--archived .lane__go::before {
+            display: none;
+        }
+
+        @media (max-width: 540px) {
+            .lane {
+                grid-template-columns: 1fr auto;
+                row-gap: 2px;
+                padding: 14px 16px;
+            }
+
+            .lane__version {
+                grid-column: 1;
+            }
+
+            .lane__meta {
+                grid-column: 1;
+                grid-row: 2;
+                font-size: 0.85rem;
+            }
+
+            .lane__go {
+                grid-column: 2;
+                grid-row: 1 / span 2;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="main">
+    <div class="start-line" aria-hidden="true"></div>
 
-        <h1>Polytrack Copy</h1>
+    <svg class="terrain" aria-hidden="true" focusable="false" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice">
+        <polygon points="0,300 0,148 152,88 300,166 468,108 642,190 820,116 1000,184 1200,126 1200,300" fill="#1b2040" />
+        <polygon points="0,300 0,214 190,166 362,232 540,178 730,246 900,194 1080,242 1200,204 1200,300" fill="#181d38" />
+        <polyline points="0,214 190,166 362,232 540,178 730,246 900,194 1080,242 1200,204" fill="none" stroke="#2c3463" stroke-width="1" />
+        <polyline points="152,88 300,166 468,108" fill="none" stroke="#2c3463" stroke-width="1" opacity="0.6" />
+    </svg>
 
-        <h2>Please choose the archive version to load:</h2>
-        <div class="versions">
-            <a href="/0.3.1/">v0.3.1</a>
-            <a href="https://poly2.benlaunches.icu/0.5.0/index.html">v0.5.0</a>
-            <a href="https://cookie.benlaunches.icu/">Cookie Clicker</a>
-        </div>
+    <main class="screen">
+        <header class="masthead">
+            <h1>Education Games</h1>
+            <p>Playable copies of older builds, kept around in case the originals go down. Online scores and servers don't work in the archives.</p>
+        </header>
 
-    </div>
+        <section class="group" aria-labelledby="polytrack">
+            <div class="group__head">
+                <h2 id="polytrack">PolyTrack</h2>
+            </div>
+            <ul class="lanes">
+                <li>
+                    <div class="lane lane--archived" aria-disabled="true">
+                        <span class="lane__version"><span class="lane__v">v</span>0.3.1</span>
+                        <span class="lane__meta">Development stopped &middot; replays break after a run</span>
+                        <span class="lane__go">Archived</span>
+                    </div>
+                </li>
+                <li>
+                    <a class="lane" href="https://poly2.benlaunches.icu/0.5.0/index.html">
+                        <span class="lane__version"><span class="lane__v">v</span>0.5.0</span>
+                        <span class="lane__meta">Maintained &middot; AI replay tooling</span>
+                        <span class="lane__go">Play</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+
+        <section class="group" aria-labelledby="cookie-clicker">
+            <div class="group__head">
+                <h2 id="cookie-clicker">Cookie Clicker</h2>
+            </div>
+            <ul class="lanes">
+                <li>
+                    <a class="lane" href="https://cookie.benlaunches.icu/">
+                        <span class="lane__version">Cookie Clicker</span>
+                        <span class="lane__meta">Bake cookies, buy upgrades, repeat</span>
+                        <span class="lane__go">Play</span>
+                    </a>
+                </li>
+            </ul>
+        </section>
+    </main>
 </body>
 </html>
