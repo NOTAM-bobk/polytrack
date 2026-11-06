@@ -1,0 +1,11 @@
+{
+  "entrypoint": "submit-worker.js",
+  "compatibilityDate": "2026-11-01",
+  "modules": [
+    {
+      "name": "submit-worker.js",
+      "type": "esm",
+      "path": "./submit-worker.js"
+    }
+  ]
+}
