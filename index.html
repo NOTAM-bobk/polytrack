@@ -79,24 +79,33 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 8px;
             min-height: 40px;
             padding: 8px 14px;
-            border: 1px solid #ff8a8a;
+            border: 1px solid rgba(255, 190, 190, 0.72);
             border-radius: 999px;
-            background: #b52d3a;
+            background: linear-gradient(135deg, #d94b58, #a92135);
             color: #fff;
             font-family: var(--font-ui);
             font-size: 0.9rem;
             font-weight: 600;
             line-height: 1;
             text-decoration: none;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-            transition: background-color 0.18s ease, transform 0.12s ease;
+            box-shadow: 0 5px 16px rgba(105, 10, 28, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease;
+        }
+
+        .panic-button__logo {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
         }
 
         .panic-button:hover,
         .panic-button:focus-visible {
-            background: #d33b4a;
+            background: linear-gradient(135deg, #ed6670, #bd2d42);
+            box-shadow: 0 7px 20px rgba(105, 10, 28, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+            transform: translateY(-1px);
         }
 
         .panic-button:focus-visible {
@@ -443,7 +452,10 @@
 </head>
 <body>
     <div class="start-line" aria-hidden="true"></div>
-    <a class="panic-button" href="https://www.wikipedia.org/" target="_blank" rel="noopener noreferrer">Panic</a>
+    <a class="panic-button" href="https://www.wikipedia.org/" target="_blank" rel="noopener noreferrer">
+        <img class="panic-button__logo" src="https://upload.wikimedia.org/wikipedia/commons/6/63/Wikipedia-logo.png" alt="" aria-hidden="true">
+        <span>Panic</span>
+    </a>
     <aside class="visitor-billboard" aria-label="Visitor count">
         <span class="visitor-billboard__label">Visitors</span>
         <strong class="visitor-billboard__count">1,337</strong>
