@@ -1,4 +1,30 @@
 {
   "domain": "benlaunches.icu",
-  "games": []
+  "games": [
+    {
+      "subdomain": "bitlife",
+      "name": "BitLife",
+      "url": "https://www.play-games.com/game/30428/bitlife-online.html"
+    },
+    {
+      "subdomain": "ducklings",
+      "name": "Ducklings",
+      "url": "https://ducklings.io/"
+    },
+    {
+      "subdomain": "moto-x3m",
+      "name": "Moto X3M",
+      "url": "https://poki.com/en/g/moto-x3m"
+    },
+    {
+      "subdomain": "2048",
+      "name": "2048",
+      "url": "https://play2048.co/"
+    },
+    {
+      "subdomain": "snake",
+      "name": "Snake",
+      "url": "https://snakegame.org/"
+    }
+  ]
 }

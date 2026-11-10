@@ -608,36 +608,6 @@
                         <span class="lane__play" aria-hidden="true"></span>
                     </a>
                 </li>
-                <li>
-                    <a class="lane" href="https://www.play-games.com/game/30428/bitlife-online.html" target="_blank" rel="noopener noreferrer">
-                        <span class="lane__name">BitLife</span>
-                        <span class="lane__play" aria-hidden="true"></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="lane" href="https://ducklings.io/" target="_blank" rel="noopener noreferrer">
-                        <span class="lane__name">Ducklings</span>
-                        <span class="lane__play" aria-hidden="true"></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="lane" href="https://poki.com/en/g/moto-x3m" target="_blank" rel="noopener noreferrer">
-                        <span class="lane__name">Moto X3M</span>
-                        <span class="lane__play" aria-hidden="true"></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="lane" href="https://play2048.co/" target="_blank" rel="noopener noreferrer">
-                        <span class="lane__name">2048</span>
-                        <span class="lane__play" aria-hidden="true"></span>
-                    </a>
-                </li>
-                <li>
-                    <a class="lane" href="https://snakegame.org/" target="_blank" rel="noopener noreferrer">
-                        <span class="lane__name">Snake</span>
-                        <span class="lane__play" aria-hidden="true"></span>
-                    </a>
-                </li>
                 <li id="managed-games" hidden></li>
             </ul>
         </section>
@@ -733,7 +703,7 @@
                     var play = document.createElement("span");
 
                     link.className = "lane";
-                    link.href = "https://" + entry.subdomain + "." + config.domain;
+                    link.href = entry.url || "https://" + entry.subdomain + "." + config.domain;
                     link.target = "_blank";
                     link.rel = "noopener noreferrer";
                     details.className = "lane__details";
