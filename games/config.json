@@ -4,12 +4,13 @@
     {
       "subdomain": "bitlife",
       "name": "BitLife",
-      "url": "https://www.play-games.com/game/30428/bitlife-online.html"
+      "url": "/games/bitlife.html"
     },
     {
       "subdomain": "ducklings",
       "name": "Ducklings",
-      "url": "https://ducklings.io/"
+      "url": "https://ducklings.io/",
+      "disabled": true
     },
     {
       "subdomain": "moto-x3m",
@@ -24,7 +25,18 @@
     {
       "subdomain": "snake",
       "name": "Snake",
-      "url": "https://snakegame.org/"
+      "url": "https://snakegame.org/",
+      "disabled": true
+    },
+    {
+      "subdomain": "monster-track",
+      "name": "Monster Track",
+      "url": "/games/monster-track.html"
+    },
+    {
+      "subdomain": "block-blast",
+      "name": "Block Blast",
+      "url": "/games/block-blast.html"
     }
   ]
 }

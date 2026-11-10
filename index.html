@@ -697,15 +697,19 @@
 
                 games.forEach(function (entry) {
                     var item = document.createElement("li");
-                    var link = document.createElement("a");
+                    var link = document.createElement(entry.disabled ? "div" : "a");
                     var details = document.createElement("span");
                     var name = document.createElement("span");
                     var play = document.createElement("span");
 
-                    link.className = "lane";
-                    link.href = entry.url || "https://" + entry.subdomain + "." + config.domain;
-                    link.target = "_blank";
-                    link.rel = "noopener noreferrer";
+                    link.className = entry.disabled ? "lane lane--archived" : "lane";
+                    if (entry.disabled) {
+                        link.setAttribute("aria-disabled", "true");
+                    } else {
+                        link.href = entry.url || "https://" + entry.subdomain + "." + config.domain;
+                        link.target = "_blank";
+                        link.rel = "noopener noreferrer";
+                    }
                     details.className = "lane__details";
                     name.className = "lane__name";
                     name.textContent = entry.name;
