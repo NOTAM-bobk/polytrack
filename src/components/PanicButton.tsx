@@ -1,11 +1,11 @@
 import * as React from "react";
-import { ShieldAlert, ExternalLink, Settings2, Check } from "lucide-react";
+import { ShieldAlert, Settings, Check } from "lucide-react";
 
 const PANIC_PRESETS = [
-  { name: "Wikipedia", url: "https://www.wikipedia.org/", desc: "General encyclopedia" },
-  { name: "Google Classroom", url: "https://classroom.google.com/", desc: "Classroom portal" },
-  { name: "Google Docs", url: "https://docs.google.com/", desc: "Clean document page" },
-  { name: "Canvas", url: "https://canvas.instructure.com/", desc: "School LMS" }
+  { name: "Wikipedia", url: "https://www.wikipedia.org/" },
+  { name: "Google Classroom", url: "https://classroom.google.com/" },
+  { name: "Google Docs", url: "https://docs.google.com/" },
+  { name: "Canvas", url: "https://canvas.instructure.com/" }
 ];
 
 export function PanicButton() {
@@ -23,10 +23,9 @@ export function PanicButton() {
     }
   }, [panicUrl]);
 
-  // Keyboard shortcut listener: ']' or 'Escape'
+  // Keyboard shortcut listener: ']'
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is actively typing in an input/textarea
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
         return;
@@ -51,80 +50,66 @@ export function PanicButton() {
   };
 
   return (
-    <div className="relative group/panic w-full">
-      <div className="flex items-stretch gap-1.5 p-1.5 rounded-xl bg-gradient-to-r from-red-950/60 via-slate-900/80 to-slate-900/80 border border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
-        {/* Main Panic Action Button */}
+    <div className="relative w-full">
+      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
         <button
           onClick={triggerPanic}
-          title="Emergency Escape (Shortcut: press ']' anywhere)"
-          className="flex-1 flex items-center justify-between px-3.5 py-2.5 rounded-lg bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-semibold text-sm tracking-wide shadow-md transition-all duration-150 transform active:scale-[0.98] cursor-pointer group"
+          title="Panic key: press ']' anywhere to redirect immediately"
+          className="flex-1 flex items-center justify-between px-3 py-2 rounded-lg bg-red-600/90 hover:bg-red-600 text-white font-medium text-xs tracking-tight transition-all active:scale-[0.99] cursor-pointer"
         >
           <div className="flex items-center gap-2">
-            <span className="p-1 rounded bg-red-700/60 group-hover:bg-red-700 transition-colors">
-              <ShieldAlert className="w-4 h-4 text-white animate-pulse" />
-            </span>
-            <div className="text-left leading-tight">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold uppercase tracking-wider text-xs">PANIC ESCAPE</span>
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-red-800/80 border border-red-400/30 text-red-100">] key</span>
-              </div>
-              <div className="text-[11px] text-red-100/80 font-normal">Instant redirect to disguise</div>
-            </div>
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>Panic</span>
           </div>
-          <ExternalLink className="w-3.5 h-3.5 text-red-200 opacity-70 group-hover:opacity-100 transition-opacity" />
+          <kbd className="px-1.5 py-0.5 rounded bg-red-700/80 text-[10px] font-mono text-red-100">
+            ]
+          </kbd>
         </button>
 
-        {/* Settings gear */}
         <button
           onClick={() => setShowSettings((prev) => !prev)}
-          title="Configure panic URL"
-          className="px-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/60 transition-colors flex items-center justify-center cursor-pointer"
+          title="Change redirect destination"
+          className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
         >
-          <Settings2 className="w-3.5 h-3.5" />
+          <Settings className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Settings popover */}
       {showSettings && (
-        <div className="absolute right-0 top-full mt-2 w-72 p-3 rounded-xl bg-slate-900/95 border border-slate-700/80 shadow-2xl backdrop-blur-md z-50 text-xs">
-          <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800 font-semibold text-slate-200">
-            <span>Panic Target Setting</span>
-            <span className="text-[10px] text-slate-400">Current: {new URL(panicUrl).hostname}</span>
+        <div className="absolute right-0 top-full mt-1.5 w-64 p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 shadow-xl z-50 text-xs">
+          <div className="text-[11px] font-medium text-zinc-400 mb-1.5 px-1">
+            Redirect Destination
           </div>
 
-          <div className="space-y-1 mb-2.5">
+          <div className="space-y-0.5 mb-2">
             {PANIC_PRESETS.map((preset) => (
               <button
                 key={preset.name}
                 onClick={() => saveCustomUrl(preset.url)}
-                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
+                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
                   panicUrl === preset.url
-                    ? "bg-red-500/20 text-red-300 border border-red-500/30"
-                    : "hover:bg-slate-800/80 text-slate-300"
+                    ? "bg-zinc-800 text-zinc-100 font-medium"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
                 }`}
               >
-                <div>
-                  <div className="font-medium text-slate-200">{preset.name}</div>
-                  <div className="text-[10px] text-slate-400">{preset.desc}</div>
-                </div>
-                {panicUrl === preset.url && <Check className="w-3.5 h-3.5 text-red-400" />}
+                <span>{preset.name}</span>
+                {panicUrl === preset.url && <Check className="w-3 h-3 text-zinc-200" />}
               </button>
             ))}
           </div>
 
-          <div className="pt-2 border-t border-slate-800">
-            <label className="block text-[10px] text-slate-400 mb-1">Custom Destination URL</label>
+          <div className="pt-2 border-t border-zinc-800">
             <div className="flex gap-1">
               <input
                 type="text"
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 placeholder="https://..."
-                className="flex-1 bg-slate-950 border border-slate-700 rounded-md px-2 py-1 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-red-500 font-mono text-[11px]"
+                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 placeholder-zinc-600 text-[11px] focus:outline-none focus:border-zinc-600 font-mono"
               />
               <button
                 onClick={() => saveCustomUrl(customInput)}
-                className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white rounded-md font-medium transition-colors cursor-pointer"
+                className="px-2.5 py-1 bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-[11px] rounded-lg transition-colors cursor-pointer"
               >
                 Save
               </button>
