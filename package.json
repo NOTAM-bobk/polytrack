@@ -1,11 +1,21 @@
 {
-  "name": "node-starter",
-  "version": "0.0.0",
+  "name": "polytrack-hub",
+  "version": "1.0.0",
   "scripts": {
+    "build": "esbuild src/index.tsx --bundle --minify --outfile=dist/home.bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@shadcn/react": "^0.3.1",
     "@vercel/analytics": "^2.0.1",
-    "redis": "^4.6.13"
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.460.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "redis": "^4.6.13",
+    "tailwind-merge": "^2.5.5"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0"
   }
 }
