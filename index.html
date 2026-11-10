@@ -638,6 +638,7 @@
                         <span class="lane__play" aria-hidden="true"></span>
                     </a>
                 </li>
+                <li id="managed-games" hidden></li>
             </ul>
         </section>
 
@@ -699,6 +700,64 @@
 
     <script>
         (function () {
+            var gamesConfigUrl = "/games/config.json";
+            var gameHost = window.location.hostname.match(/^([a-z0-9-]+)\.benlaunches\.icu$/i);
+
+            function loadGames() {
+                return fetch(gamesConfigUrl).then(function (response) {
+                    if (!response.ok) throw new Error("Unable to load games configuration");
+                    return response.json();
+                });
+            }
+
+            loadGames().then(function (config) {
+                var games = Array.isArray(config.games) ? config.games : [];
+                var gameSlug = gameHost && gameHost[1].toLowerCase();
+                var game = games.find(function (entry) {
+                    return entry.subdomain.toLowerCase() === gameSlug;
+                });
+
+                if (game && gameSlug !== "poly2" && (window.location.pathname === "/" || window.location.pathname === "/index.html")) {
+                    window.location.replace("/games/" + encodeURIComponent(game.subdomain) + "/");
+                    return;
+                }
+
+                var list = document.getElementById("managed-games");
+                if (!list || !games.length) return;
+
+                games.forEach(function (entry) {
+                    var item = document.createElement("li");
+                    var link = document.createElement("a");
+                    var details = document.createElement("span");
+                    var name = document.createElement("span");
+                    var play = document.createElement("span");
+
+                    link.className = "lane";
+                    link.href = "https://" + entry.subdomain + "." + config.domain;
+                    link.target = "_blank";
+                    link.rel = "noopener noreferrer";
+                    details.className = "lane__details";
+                    name.className = "lane__name";
+                    name.textContent = entry.name;
+                    details.appendChild(name);
+                    if (entry.subtext) {
+                        var subtext = document.createElement("span");
+                        subtext.className = "lane__note";
+                        subtext.textContent = entry.subtext;
+                        details.appendChild(subtext);
+                    }
+                    play.className = "lane__play";
+                    play.setAttribute("aria-hidden", "true");
+                    link.appendChild(details);
+                    link.appendChild(play);
+                    item.appendChild(link);
+                    list.parentNode.insertBefore(item, list);
+                });
+                list.remove();
+            }).catch(function (error) {
+                console.error(error);
+            });
+
             var bar = document.querySelector(".dock__bar");
             var tip = document.getElementById("dock-tip");
             if (!bar || !tip) return;
