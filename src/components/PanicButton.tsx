@@ -8,12 +8,13 @@ const PANIC_PRESETS = [
   { name: "Canvas", url: "https://canvas.instructure.com/" }
 ];
 
-export function PanicButton() {
+export function PanicButton({ className = "" }: { className?: string }) {
   const [panicUrl, setPanicUrl] = React.useState(() => {
     return localStorage.getItem("polytrack_panic_url") || "https://www.wikipedia.org/";
   });
   const [showSettings, setShowSettings] = React.useState(false);
   const [customInput, setCustomInput] = React.useState(panicUrl);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   const triggerPanic = React.useCallback(() => {
     try {
@@ -39,6 +40,18 @@ export function PanicButton() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [triggerPanic]);
 
+  // Click outside to close settings dropdown
+  React.useEffect(() => {
+    if (!showSettings) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSettings]);
+
   const saveCustomUrl = (url: string) => {
     let finalUrl = url.trim();
     if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
@@ -50,26 +63,27 @@ export function PanicButton() {
   };
 
   return (
-    <div className="relative w-full">
-      <div className="flex items-center gap-1.5 p-1 rounded-xl bg-zinc-900/60 border border-zinc-800/80">
+    <div ref={containerRef} className={`relative inline-flex items-center ${className}`}>
+      <div className="flex items-center gap-1 p-0.5 rounded-lg bg-zinc-900/80 border border-zinc-800">
         <button
+          type="button"
           onClick={triggerPanic}
           title="Panic key: press ']' anywhere to redirect immediately"
-          className="flex-1 flex items-center justify-between px-3 py-2 rounded-lg bg-red-600/90 hover:bg-red-600 text-white font-medium text-xs tracking-tight transition-all active:scale-[0.99] cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-600/90 hover:bg-red-600 text-white font-medium text-xs tracking-tight transition-all active:scale-[0.98] cursor-pointer shadow-sm"
         >
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Panic</span>
-          </div>
-          <kbd className="px-1.5 py-0.5 rounded bg-red-700/80 text-[10px] font-mono text-red-100">
+          <ShieldAlert className="w-3.5 h-3.5" />
+          <span>Panic</span>
+          <kbd className="px-1.5 py-0.2 rounded bg-red-700/80 text-[10px] font-mono text-red-100">
             ]
           </kbd>
         </button>
 
         <button
+          type="button"
           onClick={() => setShowSettings((prev) => !prev)}
           title="Change redirect destination"
-          className="p-2 rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+          aria-label="Panic settings"
+          className="p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
@@ -85,6 +99,7 @@ export function PanicButton() {
             {PANIC_PRESETS.map((preset) => (
               <button
                 key={preset.name}
+                type="button"
                 onClick={() => saveCustomUrl(preset.url)}
                 className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
                   panicUrl === preset.url
@@ -108,6 +123,7 @@ export function PanicButton() {
                 className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 placeholder-zinc-600 text-[11px] focus:outline-none focus:border-zinc-600 font-mono"
               />
               <button
+                type="button"
                 onClick={() => saveCustomUrl(customInput)}
                 className="px-2.5 py-1 bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-[11px] rounded-lg transition-colors cursor-pointer"
               >
