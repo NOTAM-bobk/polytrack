@@ -15,7 +15,8 @@
     {
       "subdomain": "moto-x3m",
       "name": "Moto X3M",
-      "url": "https://poki.com/en/g/moto-x3m"
+      "url": "https://poki.com/en/g/moto-x3m",
+      "disabled": true
     },
     {
       "subdomain": "2048",
@@ -31,12 +32,14 @@
     {
       "subdomain": "monster-track",
       "name": "Monster Track",
-      "url": "/games/monster-track.html"
+      "url": "/games/monster-track.html",
+      "disabled": true
     },
     {
       "subdomain": "block-blast",
       "name": "Block Blast",
-      "url": "/games/block-blast.html"
+      "url": "/games/block-blast.html",
+      "disabled": true
     }
   ]
 }

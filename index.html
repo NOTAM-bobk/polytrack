@@ -572,10 +572,12 @@
             <h2 id="all-games">All Games</h2>
             <ul class="lanes">
                 <li>
-                    <a class="lane" href="https://allgames.benlaunches.icu" target="_blank" rel="noopener noreferrer">
-                        <span class="lane__name">300+ Games</span>
-                        <span class="lane__play" aria-hidden="true"></span>
-                    </a>
+                    <div class="lane lane--archived" aria-disabled="true">
+                        <span class="lane__details">
+                            <span class="lane__name">300+ Games</span>
+                            <span class="lane__note">Might be blocked</span>
+                        </span>
+                    </div>
                 </li>
             </ul>
         </section>
@@ -778,10 +780,10 @@
                     name.className = "lane__name";
                     name.textContent = entry.name;
                     details.appendChild(name);
-                    if (entry.subtext) {
+                    if (entry.subtext || entry.disabled) {
                         var subtext = document.createElement("span");
                         subtext.className = "lane__note";
-                        subtext.textContent = entry.subtext;
+                        subtext.textContent = entry.subtext || "Might be blocked";
                         details.appendChild(subtext);
                     }
                     play.className = "lane__play";
