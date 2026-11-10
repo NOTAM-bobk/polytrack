@@ -122,12 +122,12 @@
             right: 20px;
             bottom: 20px;
             z-index: 25;
-            min-width: 150px;
-            padding: 10px 14px;
-            border: 1px solid rgba(247, 194, 75, 0.75);
-            border-radius: 6px;
-            background: rgba(31, 35, 64, 0.94);
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+            min-width: 166px;
+            padding: 11px 14px 12px;
+            border: 1px solid rgba(247, 194, 75, 0.72);
+            border-radius: 8px;
+            background: rgba(20, 22, 40, 0.94);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.06);
             text-align: center;
         }
 
@@ -142,13 +142,32 @@
         }
 
         .visitor-billboard__count {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+            min-height: 42px;
+            margin-top: 7px;
+        }
+
+        .visitor-billboard__digit {
             display: block;
-            margin-top: 3px;
-            color: var(--signal);
-            font-family: var(--font-display);
-            font-size: 1.7rem;
-            font-weight: 700;
-            line-height: 1;
+            width: 20px;
+            height: 36px;
+        }
+
+        .visitor-billboard__digit path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-width: 1.7;
+        }
+
+        .visitor-billboard__digit .is-on {
+            stroke: var(--signal);
+            filter: drop-shadow(0 0 2px rgba(247, 194, 75, 0.45));
+        }
+
+        .visitor-billboard__digit .is-off {
+            stroke: rgba(154, 160, 189, 0.18);
         }
 
         /* faceted low-poly horizon */
@@ -451,12 +470,13 @@
             .visitor-billboard {
                 right: 14px;
                 bottom: 14px;
-                min-width: 132px;
+                min-width: 142px;
                 padding: 8px 10px;
             }
 
-            .visitor-billboard__count {
-                font-size: 1.5rem;
+            .visitor-billboard__digit {
+                width: 18px;
+                height: 33px;
             }
 
             .lane {
@@ -488,7 +508,7 @@
     </a>
     <aside class="visitor-billboard" aria-label="Visitor count">
         <span class="visitor-billboard__label">Visitors</span>
-        <strong class="visitor-billboard__count">1,337</strong>
+        <strong class="visitor-billboard__count" data-value="1337" aria-label="1,337"></strong>
     </aside>
 
     <svg class="terrain" aria-hidden="true" focusable="false" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMax slice">
@@ -670,6 +690,50 @@
 
     <script>
         (function () {
+            var segmentMap = [63, 6, 91, 79, 102, 109, 125, 7, 127, 111];
+            var segmentPaths = [
+                "M2.5 1h7",
+                "M11 2.5v6.5",
+                "M11 12v6.5",
+                "M2.5 20h7",
+                "M1 12v6.5",
+                "M1 2.5v6.5",
+                "M2.5 10.5h7"
+            ];
+            var visitorCount = document.querySelector(".visitor-billboard__count");
+
+            function renderVisitorCount(value) {
+                var digits = Math.floor(value).toLocaleString("en-US").replace(/\D/g, "").split("");
+                visitorCount.textContent = "";
+                digits.forEach(function (digit) {
+                    var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    var segments = segmentMap[Number(digit)];
+                    svg.setAttribute("class", "visitor-billboard__digit");
+                    svg.setAttribute("viewBox", "0 0 12 21");
+                    svg.setAttribute("aria-hidden", "true");
+                    segmentPaths.forEach(function (path, index) {
+                        var segment = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                        segment.setAttribute("d", path);
+                        segment.setAttribute("class", (segments >> index) & 1 ? "is-on" : "is-off");
+                        svg.appendChild(segment);
+                    });
+                    visitorCount.appendChild(svg);
+                });
+            }
+
+            if (visitorCount) {
+                var target = Number(visitorCount.dataset.value) || 0;
+                var startedAt = null;
+                var animateVisitorCount = function (timestamp) {
+                    if (startedAt === null) startedAt = timestamp;
+                    var progress = Math.min((timestamp - startedAt) / 600, 1);
+                    var eased = 1 - Math.pow(1 - progress, 3);
+                    renderVisitorCount(target * eased);
+                    if (progress < 1) window.requestAnimationFrame(animateVisitorCount);
+                };
+                window.requestAnimationFrame(animateVisitorCount);
+            }
+
             var gamesConfigUrl = "/games/config.json";
             var gameHost = window.location.hostname.match(/^([a-z0-9-]+)\.benlaunches\.icu$/i);
 
