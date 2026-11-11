@@ -7,7 +7,7 @@ import {
   MessageScrollerItem,
   MessageScrollerButton,
 } from "@/components/ui/message-scroller";
-import { Send, Radio } from "lucide-react";
+import { Send, Radio, RefreshCw } from "lucide-react";
 import { HubMessage, loadMessages, sendMessage } from "@/lib/hubApi";
 
 export interface ChatMessage extends HubMessage {
@@ -56,20 +56,33 @@ export function LiveMessageBoard() {
   const [loading, setLoading] = React.useState(true);
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState("");
+  const [refreshing, setRefreshing] = React.useState(false);
   const onSendCallbackRef = React.useRef<((msg: ChatMessage) => void) | null>(null);
 
-  React.useEffect(() => {
-    let active = true;
-    loadMessages()
-      .then((loaded) => {
-        if (active) setMessages(loaded.map((message) => toChatMessage(message)));
-      })
-      .catch(() => {
-        if (active) setError("Live chat is offline; messages will retry when you send.");
-      })
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
+  const refreshMessages = React.useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const loaded = await loadMessages();
+      setMessages(loaded.map((message) => toChatMessage(message)));
+      setError("");
+    } catch {
+      setError("Live chat is offline; messages will retry when you send.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  React.useEffect(() => {
+    void refreshMessages();
+  }, [refreshMessages]);
+
+  React.useEffect(() => {
+    const interval = window.setInterval(() => {
+      void refreshMessages();
+    }, 45_000);
+    return () => window.clearInterval(interval);
+  }, [refreshMessages]);
 
   React.useEffect(() => {
     window.PolyTrackChat = {
@@ -120,7 +133,19 @@ export function LiveMessageBoard() {
           <div className="p-1 rounded-md bg-zinc-800 text-zinc-300"><Radio className="w-3.5 h-3.5" /></div>
           <span className="text-xs font-medium text-zinc-200">Trackside chat</span>
         </div>
-        <span className={`w-1.5 h-1.5 rounded-full ${loading ? "bg-amber-400 animate-pulse" : error ? "bg-red-400" : "bg-emerald-500"}`} aria-label={loading ? "Connecting" : error ? "Offline" : "Online"} />
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void refreshMessages()}
+            disabled={refreshing}
+            title="Refresh chat"
+            aria-label="Refresh chat"
+            className="p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+          <span className={`w-1.5 h-1.5 rounded-full ${loading ? "bg-amber-400 animate-pulse" : error ? "bg-red-400" : "bg-emerald-500"}`} aria-label={loading ? "Connecting" : error ? "Offline" : "Online"} />
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 relative bg-zinc-950/30">

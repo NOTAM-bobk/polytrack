@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search, Play, ExternalLink, Gamepad2 } from "lucide-react";
+import { Search, Play, Gamepad2 } from "lucide-react";
 
 export interface GameItem {
   id: string;
@@ -86,11 +86,7 @@ const DEFAULT_GAMES: GameItem[] = [
   }
 ];
 
-interface GameCatalogProps {
-  onSelectGame: (game: { name: string; url: string; description: string }) => void;
-}
-
-export function GameCatalog({ onSelectGame }: GameCatalogProps) {
+export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [activeTab, setActiveTab] = React.useState<string>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -147,7 +143,7 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
   ];
 
   return (
-    <div className="flex flex-col bg-zinc-950/80 backdrop-blur-md rounded-xl border border-zinc-800/80 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 bg-zinc-950/80 backdrop-blur-md rounded-xl border border-zinc-800/80 overflow-hidden">
       {/* Catalog Top Controls */}
       <div className="p-3 sm:p-4 border-b border-zinc-800/80 flex flex-col gap-3 shrink-0">
         <div className="flex items-center justify-between gap-3">
@@ -199,15 +195,15 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
         </div>
       </div>
 
-      {/* Horizontal game list */}
-      <div className="overflow-x-auto overflow-y-hidden p-3 sm:p-4">
-        <div className="flex w-max min-w-full gap-3 pb-1">
+      {/* Game list */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
+        <div className="flex flex-col gap-3">
           {filteredGames.map((game) => {
             const isFeatured = !!game.featured;
             return (
               <div
                 key={game.id}
-                className={`group relative flex w-[min(82vw,17rem)] sm:w-64 shrink-0 flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
+                className={`group relative flex w-full flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
                   game.disabled
                     ? "bg-zinc-950/40 border-zinc-800/60 opacity-50 grayscale"
                     : isFeatured
@@ -234,26 +230,25 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
 
                 </div>
 
-                <div className="px-3 py-2 border-t border-zinc-800/80 flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => onSelectGame({ name: game.name, url: game.url, description: game.description })}
-                    disabled={game.disabled}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
-                  >
-                    <Play className="w-3 h-3 fill-current" />
-                    <span>{game.disabled ? "Coming soon" : "Play"}</span>
-                  </button>
-
-                  {!game.disabled && (
+                <div className="px-3 py-2 border-t border-zinc-800/80 flex items-center shrink-0">
+                  {game.disabled ? (
+                    <button
+                      type="button"
+                      disabled
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                    >
+                      <Play className="w-3 h-3 fill-current" />
+                      <span>Coming soon</span>
+                    </button>
+                  ) : (
                     <a
                       href={game.url}
                       target="_blank"
-                      rel="noreferrer"
-                      title="Open in new tab"
-                      aria-label={`Open ${game.name} in a new tab`}
-                      className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
+                      <Play className="w-3 h-3 fill-current" />
+                      <span>Play</span>
                     </a>
                   )}
                 </div>
