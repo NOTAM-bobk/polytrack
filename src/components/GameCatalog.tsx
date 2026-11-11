@@ -133,6 +133,13 @@ export const DEFAULT_GAMES: GameItem[] = [
     tags: ["Simulation", "RPG"]
   },
   {
+    id: "game-impossible-quiz",
+    name: "Impossible Quiz",
+    url: "/games/the-impossible-quiz.html",
+    description: "110 questions. Surely you can get through them all.",
+    tags: ["Quiz", "Trivia", "Challenge"]
+  },
+  {
     id: "game-cookie-clicker",
     name: "Cookie Clicker",
     url: "https://cookie.benlaunches.icu/",

@@ -7,10 +7,11 @@
       "url": "/games/bitlife.html",
       "category": "casual"
     },
-     {
-      "subdomain": "imposiblequiz",
-      "name": "impossible-Quiz",
+    {
+      "subdomain": "impossible-quiz",
+      "name": "Impossible Quiz",
       "url": "/games/the-impossible-quiz.html",
+      "description": "110 questions. Surely you can get through them all.",
       "category": "fun"
     },
     {
