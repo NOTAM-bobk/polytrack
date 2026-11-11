@@ -11,14 +11,12 @@
       "subdomain": "ducklings",
       "name": "Ducklings",
       "url": "https://ducklings.io/",
-      "category": "casual",
       "disabled": true
     },
     {
       "subdomain": "moto-x3m",
       "name": "Moto X3M",
       "url": "https://poki.com/en/g/moto-x3m",
-      "category": "racing",
       "disabled": true
     },
     {
@@ -31,28 +29,24 @@
       "subdomain": "snake",
       "name": "Snake",
       "url": "https://snakegame.org/",
-      "category": "puzzle",
       "disabled": true
     },
     {
       "subdomain": "monster-track",
       "name": "Monster Track",
       "url": "/games/monster-track.html",
-      "category": "racing",
       "disabled": true
     },
     {
       "subdomain": "block-blast",
       "name": "Block Blast",
       "url": "/games/block-blast.html",
-      "category": "puzzle",
       "disabled": true
     },
     {
       "subdomain": "eaglercraft",
       "name": "Eaglercraft",
       "url": "https://eaglercraft.com/",
-      "category": "casual",
       "description": "Browser-based Minecraft with survival and multiplayer.",
       "disabled": true
     }
