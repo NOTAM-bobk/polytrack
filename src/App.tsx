@@ -2,6 +2,7 @@ import { GameCatalog } from "./components/GameCatalog";
 import { PanicButton } from "./components/PanicButton";
 import { LiveMessageBoard } from "./components/LiveMessageBoard";
 import { VisitorCounter } from "./components/VisitorCounter";
+import { ShareButton } from "./components/ShareButton";
 import { HalftoneHorizon } from "./components/ui/halftone-horizon";
 import { Compass, Send, Sparkles } from "lucide-react";
 
@@ -19,6 +20,7 @@ export function App() {
               <a href="/submit/" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-300 hover:text-white bg-zinc-900/60 hover:bg-zinc-800 border border-zinc-800/80 transition-colors whitespace-nowrap active:scale-[0.98]"><Send className="w-3.5 h-3.5 text-zinc-400" /><span className="hidden sm:inline">Submit URL</span></a>
               <a href="/ai/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 hover:bg-zinc-800/50 border border-zinc-800/60 transition-colors whitespace-nowrap" title="Open Unblocked AIs in a new tab"><Sparkles className="w-3.5 h-3.5 text-zinc-400" /><span className="hidden sm:inline">Unblocked AIs</span></a>
               <a href="/outside/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 hover:bg-zinc-800/50 border border-zinc-800/60 transition-colors whitespace-nowrap" title="Open outside games in a new tab"><Compass className="w-3.5 h-3.5 text-zinc-400" /><span className="hidden sm:inline">Outside games</span></a>
+              <ShareButton />
             </nav>
           </div>
           <div className="flex items-center shrink-0 ml-2"><PanicButton /></div>
@@ -45,12 +47,12 @@ export function App() {
               className="inline-flex items-center opacity-80 hover:opacity-100 transition-opacity shrink-0"
             >
               <img
-                src="https://verifieddr.com/badge/benlaunches-icu.svg?metric=truedr"
+                src="https://verifieddr.com/badge/benlaunches-icu-dark.svg?style=minimal&metric=dr"
                 alt="Verified DR - Verified Domain Rating for benlaunches.icu"
-                width="220"
-                height="68"
+                width="200"
+                height="24"
                 loading="lazy"
-                className="h-7 w-auto sm:h-8"
+                className="h-6 w-auto"
               />
             </a>
           </div>
