@@ -76,7 +76,7 @@ async function views(request, env) {
 
 export default {
   async fetch(request, env) {
-    const path = new URL(request.url).pathname;
+    const path = new URL(request.url).pathname.replace(/\/+$/, "") || "/";
     if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: headers(request) });
     try {
       if (path === "/" || path === "/api/health") return json(request, { ok: true, service: "polytrack-hub-api" });

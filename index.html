@@ -18,6 +18,8 @@
     <meta name="twitter:title" content='"Education" Games'>
     <meta name="twitter:description" content="Educational games and learning resources for students and classrooms.">
     <link rel="icon" href="https://www.google.com/favicon.ico" sizes="any">
+    <meta name="monetag" content="a71e9b27288f5230ca0709c193abd848">
+    <script>(function(s){s.dataset.zone='12241725',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 
     <!-- Bidvertiser2108105 -->
 
@@ -74,6 +76,72 @@
         color-scheme: dark;
         color: #fafafa;
         font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      }
+
+      /* Solid 3D card styling matching the attached element code style */
+      .game-card {
+        background: #1d1d1d !important;
+        border-radius: 20px !important;
+        border: none !important;
+        position: relative;
+        isolation: isolate;
+        transform: perspective(1000px) translateZ(0);
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        will-change: transform, box-shadow;
+        box-shadow:
+          inset 0 0 0 1px rgba(44, 47, 54, 0.65),
+          inset 0 0 50px 0 rgba(255, 255, 255, 0.02),
+          0 10px 24px -6px rgba(0, 0, 0, 0.5),
+          0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease;
+      }
+
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+
+      .game-card:hover {
+        transform: perspective(1000px) translateY(-3px) translateZ(6px);
+        box-shadow:
+          inset 0 0 0 1px rgba(70, 75, 88, 0.8),
+          inset 0 0 50px 0 rgba(255, 255, 255, 0.035),
+          0 20px 36px -10px rgba(0, 0, 0, 0.7),
+          0 6px 14px rgba(0, 0, 0, 0.4) !important;
+      }
+
+      .game-card:focus-within {
+        outline: 1px solid rgba(228, 228, 231, 0.5);
+        outline-offset: 2px;
+      }
+
+      /* Solid 3D container panels (catalog area, chat board, view counter) */
+      .solid-3d-panel {
+        background: #1d1d1d !important;
+        border-radius: 20px !important;
+        border: none !important;
+        box-shadow:
+          inset 0 0 0 1px rgba(44, 47, 54, 0.52),
+          inset 0 0 50px 0 rgba(255, 255, 255, 0.02),
+          0 14px 30px -8px rgba(0, 0, 0, 0.55),
+          0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        position: relative;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+
+      .solid-3d-chip {
+        border-radius: 36px;
+        background: rgba(255, 255, 255, 0.04);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .game-card { transition: none; }
+        .game-card:hover { transform: none; }
       }
 
       /* Clean subtle scrollbars */

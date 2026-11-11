@@ -32,6 +32,12 @@ const LABELS: Record<ShareState, string> = {
   error: "Copy failed",
 };
 
+const CHIP_STYLE: React.CSSProperties = {
+  borderRadius: 36,
+  background: "rgba(255, 255, 255, 0.04)",
+  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
+};
+
 export function ShareButton() {
   const [state, setState] = React.useState<ShareState>("idle");
   const resetTimer = React.useRef<number | null>(null);
@@ -81,7 +87,8 @@ export function ShareButton() {
         onClick={handleShare}
         title="Share this page"
         aria-label="Share this page"
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 bg-zinc-900/40 hover:bg-zinc-800/50 border border-zinc-800/60 transition-colors whitespace-nowrap active:scale-[0.98] cursor-pointer"
+        style={CHIP_STYLE}
+        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98] cursor-pointer"
       >
         {done ? <Check className="w-3.5 h-3.5 text-amber-300" /> : <Share2 className="w-3.5 h-3.5 text-zinc-400" />}
         <span className="hidden sm:inline">{LABELS[state]}</span>

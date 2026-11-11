@@ -1,4 +1,26 @@
 {
   "outputDirectory": ".",
-  "trailingSlash": true
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/api/hub/messages",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/messages"
+    },
+    {
+      "source": "/api/hub/messages/",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/messages"
+    },
+    {
+      "source": "/api/hub/views",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/views"
+    },
+    {
+      "source": "/api/hub/views/",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/views"
+    },
+    {
+      "source": "/api/hub/:path*",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/:path*"
+    }
+  ]
 }
