@@ -114,7 +114,7 @@ export function LiveMessageBoard() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 rounded-xl bg-zinc-900/30 border border-zinc-800/80 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 rounded-xl bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/80 shrink-0">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded-md bg-zinc-800 text-zinc-300"><Radio className="w-3.5 h-3.5" /></div>

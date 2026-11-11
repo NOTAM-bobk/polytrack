@@ -147,7 +147,7 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-zinc-900/30 rounded-xl border border-zinc-800/80 overflow-hidden">
+    <div className="flex flex-col bg-zinc-950/80 backdrop-blur-md rounded-xl border border-zinc-800/80 overflow-hidden">
       {/* Catalog Top Controls */}
       <div className="p-3 sm:p-4 border-b border-zinc-800/80 flex flex-col gap-3 shrink-0">
         <div className="flex items-center justify-between gap-3">
@@ -200,7 +200,7 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
       </div>
 
       {/* Horizontal game list */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-4 min-h-0">
+      <div className="overflow-x-auto overflow-y-hidden p-3 sm:p-4">
         <div className="flex w-max min-w-full gap-3 pb-1">
           {filteredGames.map((game) => {
             const isFeatured = !!game.featured;
@@ -212,7 +212,7 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
                     ? "bg-zinc-950/40 border-zinc-800/60 opacity-50 grayscale"
                     : isFeatured
                       ? "bg-zinc-900 border-zinc-700 shadow-sm hover:border-zinc-500"
-                      : "bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/50"
+                      : "bg-zinc-950/80 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/80"
                 }`}
               >
                 <div className="p-3 flex-1 flex flex-col">
