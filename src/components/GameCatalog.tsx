@@ -180,52 +180,82 @@ export function GameCatalog() {
   }, [games, searchQuery]);
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-zinc-950/80 backdrop-blur-md rounded-xl border border-zinc-800/80 overflow-hidden">
+    <div
+      className="solid-3d-panel flex-1 flex flex-col min-h-0 overflow-hidden"
+      style={{
+        background: "#1d1d1d",
+        borderRadius: 20,
+        boxShadow:
+          "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 14px 30px -8px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
+    >
       {/* Catalog Top Controls */}
-      <div className="p-3 sm:p-4 border-b border-zinc-800/80 flex flex-col gap-3 shrink-0">
+      <div className="p-3 sm:p-4 border-b border-white/[0.06] flex flex-col gap-3 shrink-0">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">Games</h2>
-            <span className="text-[11px] text-zinc-400">{filteredGames.length} games</span>
+            <span
+              style={CHIP_STYLE}
+              className="px-2.5 py-0.5 text-[11px] text-[#caccd2]"
+            >
+              {filteredGames.length} games
+            </span>
           </div>
 
           <div className="relative w-full max-w-[240px]">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search games..."
-              className="w-full pl-8 pr-3 py-1.5 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-zinc-600 focus:ring-2 focus:ring-zinc-700/50 transition-colors"
+              style={{
+                ...CHIP_STYLE,
+                borderRadius: 14,
+                background: "rgba(255, 255, 255, 0.03)",
+              }}
+              className="w-full pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-colors"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-200 text-sm"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-sm"
               >
                 ×
               </button>
             )}
           </div>
         </div>
-
       </div>
 
       {/* Game list */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
+      <div
+        className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0"
+        style={{
+          background: "rgba(0, 0, 0, 0.18)",
+          boxShadow: "inset 0 1px 4px rgba(0, 0, 0, 0.3)",
+        }}
+      >
         <div className="flex flex-col gap-3">
           <div
             aria-label="Advertisement space"
-            className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 px-3 py-2.5"
+            style={{
+              borderRadius: 16,
+              background: "rgba(255, 255, 255, 0.02)",
+              boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.03)",
+            }}
+            className="flex items-center justify-between gap-3 px-3.5 py-2.5"
           >
             <div className="min-w-0">
-              <div className="text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-600">Ad space</div>
+              <div className="text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">Ad space</div>
               <div className="truncate text-xs text-zinc-400">Reach students and gamers here</div>
             </div>
             <a
               href="mailto:hello@base31.org?subject=Ad%20space%20on%20Education%20Games"
-              className="shrink-0 rounded-lg border border-zinc-700/70 bg-zinc-900/60 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:text-white"
+              style={CHIP_STYLE}
+              className="shrink-0 inline-flex items-center px-3 py-1 text-[11px] font-medium text-zinc-300 transition-colors hover:text-white"
             >
               Advertise
             </a>
@@ -237,8 +267,8 @@ export function GameCatalog() {
               <div
                 key={game.id}
                 className={`game-card group relative flex w-full flex-col transition-all duration-200 overflow-hidden ${
-                  isFeatured ? "featured" : ""
-                } ${game.disabled ? "opacity-75" : ""}`}
+                  game.disabled ? "opacity-75" : ""
+                }`}
                 style={{
                   background: "#1d1d1d",
                   borderRadius: 20,
@@ -247,10 +277,6 @@ export function GameCatalog() {
                   fontFamily: "system-ui, -apple-system, sans-serif",
                 }}
               >
-                {/* BorderBeam effect matching attached component */}
-                <div className="border-beam-track" aria-hidden="true">
-                  <div className="border-beam-glow" />
-                </div>
 
                 <div className="p-4 sm:p-5 flex-1 flex flex-col relative z-10">
                   <div className="flex items-start justify-between gap-2 mb-2">

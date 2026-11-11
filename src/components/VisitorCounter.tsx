@@ -75,6 +75,12 @@ function NumberTicker({ end }: { end: number }) {
   );
 }
 
+const CHIP_STYLE: React.CSSProperties = {
+  borderRadius: 36,
+  background: "rgba(255, 255, 255, 0.04)",
+  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
+};
+
 export function VisitorCounter() {
   const [count, setCount] = React.useState<number | null>(null);
   const [offline, setOffline] = React.useState(false);
@@ -94,13 +100,31 @@ export function VisitorCounter() {
 
   return (
     <div
-      className="w-full px-3 py-2 rounded-xl bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 flex items-center justify-between gap-3"
+      className="solid-3d-panel w-full px-4 py-3 flex items-center justify-between gap-3"
+      style={{
+        background: "#1d1d1d",
+        borderRadius: 20,
+        boxShadow:
+          "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 10px 24px -6px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
       title={offline ? "Showing the last saved total" : "Total hub views"}
     >
-      <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-500 leading-tight">
-        Total hub views
-      </span>
+      <div className="flex items-center gap-2">
+        <span
+          style={CHIP_STYLE}
+          className="inline-flex items-center px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[#8B9099] leading-tight"
+        >
+          Total hub views
+        </span>
+      </div>
       <div
+        style={{
+          borderRadius: 12,
+          background: "rgba(0, 0, 0, 0.28)",
+          boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 3px rgba(0, 0, 0, 0.4)",
+          padding: "3px 8px",
+        }}
         className={`flex items-center transition-opacity ${count === null ? "opacity-40 animate-pulse" : ""}`}
         role="img"
         aria-label={count === null ? "Loading total hub views" : `${count.toLocaleString("en-US")} total hub views`}

@@ -49,6 +49,12 @@ declare global {
   }
 }
 
+const CHIP_STYLE: React.CSSProperties = {
+  borderRadius: 36,
+  background: "rgba(255, 255, 255, 0.04)",
+  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
+};
+
 export function LiveMessageBoard() {
   const [messages, setMessages] = React.useState<ChatMessage[]>(fallbackMessages);
   const [nickname, setNickname] = React.useState(() => localStorage.getItem("polytrack_nickname") || `Racer_${Math.floor(100 + Math.random() * 900)}`);
@@ -127,11 +133,22 @@ export function LiveMessageBoard() {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 rounded-xl bg-zinc-950/80 backdrop-blur-md border border-zinc-800/80 overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/80 shrink-0">
+    <div
+      className="solid-3d-panel flex-1 flex flex-col min-h-0 overflow-hidden"
+      style={{
+        background: "#1d1d1d",
+        borderRadius: 20,
+        boxShadow:
+          "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 14px 30px -8px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)",
+        fontFamily: "system-ui, -apple-system, sans-serif",
+      }}
+    >
+      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-2">
-          <div className="p-1 rounded-md bg-zinc-800 text-zinc-300"><Radio className="w-3.5 h-3.5" /></div>
-          <span className="text-xs font-medium text-zinc-200">Trackside chat</span>
+          <div style={CHIP_STYLE} className="p-1.5 text-zinc-300">
+            <Radio className="w-3.5 h-3.5" />
+          </div>
+          <span className="text-xs font-semibold text-zinc-200">Trackside chat</span>
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -140,28 +157,75 @@ export function LiveMessageBoard() {
             disabled={refreshing}
             title="Refresh chat"
             aria-label="Refresh chat"
-            className="p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 disabled:opacity-60 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            style={CHIP_STYLE}
+            className="p-1.5 text-zinc-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </button>
-          <span className={`w-1.5 h-1.5 rounded-full ${loading ? "bg-amber-400 animate-pulse" : error ? "bg-red-400" : "bg-emerald-500"}`} aria-label={loading ? "Connecting" : error ? "Offline" : "Online"} />
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              loading ? "bg-amber-400 animate-pulse" : error ? "bg-red-400" : "bg-emerald-500"
+            }`}
+            aria-label={loading ? "Connecting" : error ? "Offline" : "Online"}
+          />
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 relative bg-zinc-950/30">
+      <div
+        className="flex-1 min-h-0 relative"
+        style={{
+          background: "rgba(0, 0, 0, 0.18)",
+          boxShadow: "inset 0 1px 4px rgba(0, 0, 0, 0.3)",
+        }}
+      >
         <MessageScrollerProvider autoScroll defaultScrollPosition="end">
           <MessageScroller className="size-full">
             <MessageScrollerViewport className="p-3">
               <MessageScrollerContent className="gap-2.5">
-                {messages.length === 0 && !loading && <p className="py-8 text-center text-xs text-zinc-600">No racers on comms yet. Start the conversation.</p>}
-                {loading && <p className="py-8 text-center text-xs text-zinc-600">Connecting to the track...</p>}
+                {messages.length === 0 && !loading && (
+                  <p className="py-8 text-center text-xs text-zinc-500">
+                    No racers on comms yet. Start the conversation.
+                  </p>
+                )}
+                {loading && (
+                  <p className="py-8 text-center text-xs text-zinc-500">
+                    Connecting to the track...
+                  </p>
+                )}
                 {messages.map((message) => {
                   const isUser = message.from === "user";
                   return (
-                    <MessageScrollerItem key={message.id} messageId={message.id} scrollAnchor={isUser} className="transition-all duration-150">
+                    <MessageScrollerItem
+                      key={message.id}
+                      messageId={message.id}
+                      scrollAnchor={isUser}
+                      className="transition-all duration-150"
+                    >
                       <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
-                        <div className="flex items-center gap-2 px-1 mb-1 text-[10px] text-zinc-500"><span className="font-medium text-zinc-400">{message.author}</span><span>{message.timestamp}</span></div>
-                        <div className={`max-w-[88%] rounded-2xl px-3 py-2 text-xs leading-relaxed break-words shadow-sm ${isUser ? "bg-zinc-100 text-zinc-950 rounded-br-sm" : "bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-bl-sm"}`}>{message.text}</div>
+                        <div className="flex items-center gap-2 px-1 mb-1 text-[10px] text-zinc-400">
+                          <span className="font-medium text-zinc-300">{message.author}</span>
+                          <span className="text-zinc-500">{message.timestamp}</span>
+                        </div>
+                        <div
+                          className={`max-w-[88%] px-3 py-2 text-xs leading-relaxed break-words shadow-sm ${
+                            isUser
+                              ? "bg-white text-zinc-950 rounded-2xl rounded-br-sm font-medium"
+                              : "text-[#caccd2] rounded-2xl rounded-bl-sm"
+                          }`}
+                          style={
+                            isUser
+                              ? {
+                                  boxShadow: "0 2px 8px rgba(0,0,0,0.25)",
+                                }
+                              : {
+                                  background: "rgba(255, 255, 255, 0.05)",
+                                  boxShadow:
+                                    "inset 0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.2)",
+                                }
+                          }
+                        >
+                          {message.text}
+                        </div>
                       </div>
                     </MessageScrollerItem>
                   );
@@ -173,10 +237,50 @@ export function LiveMessageBoard() {
         </MessageScrollerProvider>
       </div>
 
-      <form onSubmit={handleSendMessage} className="p-2.5 border-t border-zinc-800/80 flex items-center gap-1.5 shrink-0">
-        <input type="text" value={nickname} onChange={(event) => handleNicknameChange(event.target.value)} placeholder="Name" title="Your name" maxLength={32} className="w-20 px-2 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-[11px] text-zinc-300 placeholder-zinc-600 focus:outline-none focus:border-zinc-600 shrink-0" />
-        <input type="text" value={inputText} onChange={(event) => setInputText(event.target.value)} placeholder="Write a message..." maxLength={280} aria-label="Message" className="flex-1 min-w-0 px-2.5 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-zinc-600" />
-        <button type="submit" disabled={!inputText.trim() || sending} aria-label="Send message" className="p-2 bg-zinc-100 hover:bg-white disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 rounded-lg transition-colors cursor-pointer shrink-0"><Send className="w-3.5 h-3.5" /></button>
+      <form
+        onSubmit={handleSendMessage}
+        className="p-2.5 sm:p-3 border-t border-white/[0.06] flex items-center gap-2 shrink-0"
+      >
+        <input
+          type="text"
+          value={nickname}
+          onChange={(event) => handleNicknameChange(event.target.value)}
+          placeholder="Name"
+          title="Your name"
+          maxLength={32}
+          style={{
+            ...CHIP_STYLE,
+            borderRadius: 14,
+            background: "rgba(255, 255, 255, 0.03)",
+          }}
+          className="w-20 px-2.5 py-2 text-[11px] text-[#caccd2] placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 shrink-0"
+        />
+        <input
+          type="text"
+          value={inputText}
+          onChange={(event) => setInputText(event.target.value)}
+          placeholder="Write a message..."
+          maxLength={280}
+          aria-label="Message"
+          style={{
+            ...CHIP_STYLE,
+            borderRadius: 14,
+            background: "rgba(255, 255, 255, 0.03)",
+          }}
+          className="flex-1 min-w-0 px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
+        />
+        <button
+          type="submit"
+          disabled={!inputText.trim() || sending}
+          aria-label="Send message"
+          style={{
+            ...CHIP_STYLE,
+            borderRadius: 14,
+          }}
+          className="flex items-center justify-center w-8 h-8 text-zinc-200 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0"
+        >
+          <Send className="w-3.5 h-3.5" />
+        </button>
       </form>
       {error && <p className="px-3 pb-2 text-[10px] text-amber-400">{error}</p>}
     </div>
