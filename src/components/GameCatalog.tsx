@@ -60,46 +60,11 @@ const DEFAULT_GAMES: GameItem[] = [
     badgeColor: "amber"
   },
   {
-    id: "game-2048",
-    name: "2048 Puzzle",
-    url: "https://2048.benlaunches.icu/",
-    description: "Combine numbered tiles to reach 2048.",
-    tags: ["Logic", "Puzzle", "Quick Play"]
-  },
-  {
     id: "game-bitlife",
     name: "BitLife Simulator",
     url: "/games/bitlife.html",
     description: "A branching text-based life simulator.",
     tags: ["Simulation", "RPG"]
-  },
-  {
-    id: "game-moto-x3m",
-    name: "Moto X3M",
-    url: "https://poki.com/en/g/moto-x3m",
-    description: "Race through stunt courses, loops, and hazards.",
-    tags: ["Stunts", "Racing", "Arcade"]
-  },
-  {
-    id: "game-ducklings",
-    name: "Ducklings.io",
-    url: "https://ducklings.io/",
-    description: "Rescue ducklings and grow your nest.",
-    tags: ["Multiplayer", "Casual"]
-  },
-  {
-    id: "game-snake",
-    name: "Retro Snake",
-    url: "https://snakegame.org/",
-    description: "The classic snake arcade game.",
-    tags: ["Retro", "Classic", "Arcade"]
-  },
-  {
-    id: "game-monster-track",
-    name: "Monster Track",
-    url: "https://monster.benlaunches.icu/",
-    description: "Take a monster truck through off-road courses.",
-    tags: ["4x4", "Offroad", "Physics"]
   },
   {
     id: "game-cookie-clicker",
@@ -109,11 +74,43 @@ const DEFAULT_GAMES: GameItem[] = [
     tags: ["Idle", "Clicker", "Casual"]
   },
   {
+    id: "game-monster-track",
+    name: "Monster Track",
+    url: "https://monster.benlaunches.icu/",
+    description: "Take a monster truck through off-road courses.",
+    tags: ["4x4", "Offroad", "Physics"]
+  },
+  {
+    id: "game-moto-x3m",
+    name: "Moto X3M",
+    url: "https://poki.com/en/g/moto-x3m",
+    description: "Race through stunt courses, loops, and hazards.",
+    tags: ["Stunts", "Racing", "Arcade"],
+    disabled: true
+  },
+  {
+    id: "game-ducklings",
+    name: "Ducklings.io",
+    url: "https://ducklings.io/",
+    description: "Rescue ducklings and grow your nest.",
+    tags: ["Multiplayer", "Casual"],
+    disabled: true
+  },
+  {
+    id: "game-snake",
+    name: "Retro Snake",
+    url: "https://snakegame.org/",
+    description: "The classic snake arcade game.",
+    tags: ["Retro", "Classic", "Arcade"],
+    disabled: true
+  },
+  {
     id: "game-block-blast",
     name: "Block Blast",
     url: "/games/block-blast.html",
     description: "Clear rows and columns in this block puzzle.",
-    tags: ["Puzzle", "Blocks", "Casual"]
+    tags: ["Puzzle", "Blocks", "Casual"],
+    disabled: true
   },
   {
     id: "game-eaglercraft",
@@ -122,6 +119,13 @@ const DEFAULT_GAMES: GameItem[] = [
     description: "Browser-based Minecraft with survival and multiplayer.",
     tags: ["Sandbox", "Minecraft", "Multiplayer"],
     disabled: true
+  },
+  {
+    id: "game-2048",
+    name: "2048 Puzzle",
+    url: "https://2048.benlaunches.icu/",
+    description: "Combine numbered tiles to reach 2048.",
+    tags: ["Logic", "Puzzle", "Quick Play"]
   }
 ];
 
@@ -174,6 +178,7 @@ export function GameCatalog() {
                   description: matched.description && !matched.description.includes("from games catalog")
                     ? matched.description
                     : item.description,
+                  disabled: matched.disabled ?? item.disabled,
                 };
               }
               return item;
