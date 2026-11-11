@@ -91,9 +91,16 @@ const DEFAULT_GAMES: GameItem[] = [
   {
     id: "game-monster-track",
     name: "Monster Track",
-    url: "/games/monster-track.html",
+    url: "https://monster.benlaunches.icu/",
     description: "Take a monster truck through off-road courses.",
     tags: ["4x4", "Offroad", "Physics"]
+  },
+  {
+    id: "game-cookie-clicker",
+    name: "Cookie Clicker",
+    url: "https://cookie.benlaunches.icu/",
+    description: "Bake cookies and build a sweet empire.",
+    tags: ["Idle", "Clicker", "Casual"]
   },
   {
     id: "game-block-blast",

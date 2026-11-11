@@ -34,8 +34,13 @@
     {
       "subdomain": "monster-track",
       "name": "Monster Track",
-      "url": "/games/monster-track.html",
+      "url": "https://monster.benlaunches.icu/",
       "disabled": true
+    },
+    {
+      "subdomain": "cookie",
+      "name": "Cookie Clicker",
+      "url": "https://cookie.benlaunches.icu/"
     },
     {
       "subdomain": "block-blast",
