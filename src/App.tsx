@@ -36,7 +36,24 @@ export function App() {
         </main>
 
         <footer className="shrink-0 border-t border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md px-3 sm:px-4 py-2.5 text-[11px] text-zinc-500 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <span>Built by SS</span>
+          <div className="flex items-center gap-3 min-w-0">
+            <span>Built by SS</span>
+            <a
+              href="https://verifieddr.com/website/benlaunches-icu"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center opacity-80 hover:opacity-100 transition-opacity shrink-0"
+            >
+              <img
+                src="https://verifieddr.com/badge/benlaunches-icu.svg?metric=truedr"
+                alt="Verified DR - Verified Domain Rating for benlaunches.icu"
+                width="220"
+                height="68"
+                loading="lazy"
+                className="h-7 w-auto sm:h-8"
+              />
+            </a>
+          </div>
           <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <a href="mailto:hello@base31.org" className="hover:text-zinc-200 transition-colors">hello@base31.org</a>
             <a href="/terms/" className="hover:text-zinc-200 transition-colors">Terms of Service</a>

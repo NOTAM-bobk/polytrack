@@ -1,6 +1,33 @@
 import * as React from "react";
 import { Search, Play, Gamepad2 } from "lucide-react";
 
+const RECENT_GAMES_KEY = "polytrack_recent_games";
+const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_RECENT_GAMES = 6;
+
+type RecentGame = { id: string; playedAt: number };
+
+function loadRecentGames(): RecentGame[] {
+  try {
+    const raw = localStorage.getItem(RECENT_GAMES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const cutoff = Date.now() - RECENT_WINDOW_MS;
+    return parsed
+      .filter(
+        (entry): entry is RecentGame =>
+          !!entry &&
+          typeof entry.id === "string" &&
+          typeof entry.playedAt === "number" &&
+          entry.playedAt > cutoff
+      )
+      .slice(0, MAX_RECENT_GAMES);
+  } catch {
+    return [];
+  }
+}
+
 export interface GameItem {
   id: string;
   name: string;
@@ -90,6 +117,22 @@ export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [activeTab, setActiveTab] = React.useState<string>("all");
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [recentIds, setRecentIds] = React.useState<Set<string>>(
+    () => new Set(loadRecentGames().map((entry) => entry.id))
+  );
+
+  const markGamePlayed = React.useCallback((id: string) => {
+    const next = [
+      { id, playedAt: Date.now() },
+      ...loadRecentGames().filter((entry) => entry.id !== id)
+    ].slice(0, MAX_RECENT_GAMES);
+    setRecentIds(new Set(next.map((entry) => entry.id)));
+    try {
+      localStorage.setItem(RECENT_GAMES_KEY, JSON.stringify(next));
+    } catch {
+      // Storage can be unavailable in private mode; the game link still works.
+    }
+  }, []);
 
   React.useEffect(() => {
     fetch("/games/config.json")
@@ -200,6 +243,7 @@ export function GameCatalog() {
         <div className="flex flex-col gap-3">
           {filteredGames.map((game) => {
             const isFeatured = !!game.featured;
+            const isRecent = recentIds.has(game.id);
             return (
               <div
                 key={game.id}
@@ -213,8 +257,16 @@ export function GameCatalog() {
               >
                 <div className="p-3 flex-1 flex flex-col">
                   <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className="font-medium text-sm text-zinc-100 group-hover:text-white transition-colors flex items-center gap-1.5">
-                      <span>{game.name}</span>
+                    <h3 className="font-medium text-sm text-zinc-100 group-hover:text-white transition-colors flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{game.name}</span>
+                      {isRecent && (
+                        <span
+                          title="You opened this game recently"
+                          className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-orange-500 text-zinc-950"
+                        >
+                          Recent
+                        </span>
+                      )}
                     </h3>
                     {game.version && (
                       <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700/70">
@@ -245,6 +297,7 @@ export function GameCatalog() {
                       href={game.url}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => markGamePlayed(game.id)}
                       className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950"
                     >
                       <Play className="w-3 h-3 fill-current" />
