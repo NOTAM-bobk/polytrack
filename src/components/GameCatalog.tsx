@@ -156,11 +156,27 @@ export function GameCatalog() {
           }));
 
           setGames((prev) => {
-            const polyItems = prev.filter((item) => item.featured);
-            const nonDuplicates = loaded.filter(
-              (l) => !polyItems.some((p) => p.name.toLowerCase() === l.name.toLowerCase())
+            const updated = prev.map((item) => {
+              const matched = loaded.find(
+                (l) => l.name.toLowerCase() === item.name.toLowerCase() || l.id === item.id
+              );
+              if (matched) {
+                return {
+                  ...item,
+                  url: matched.url && matched.url !== "#" ? matched.url : item.url,
+                  description: matched.description && !matched.description.includes("from games catalog")
+                    ? matched.description
+                    : item.description,
+                };
+              }
+              return item;
+            });
+
+            const newItems = loaded.filter(
+              (l) => !prev.some((p) => p.name.toLowerCase() === l.name.toLowerCase())
             );
-            return [...polyItems, ...nonDuplicates];
+
+            return [...updated, ...newItems];
           });
         }
       })
@@ -275,6 +291,9 @@ export function GameCatalog() {
                   boxShadow:
                     "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 10px 24px -6px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)",
                   fontFamily: "system-ui, -apple-system, sans-serif",
+                  willChange: "transform, box-shadow",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
                 }}
               >
 

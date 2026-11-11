@@ -8,7 +8,13 @@ const PANIC_PRESETS = [
   { name: "Canvas", url: "https://canvas.instructure.com/" }
 ];
 
-export function PanicButton({ className = "" }: { className?: string }) {
+export function PanicButton({
+  className = "",
+  onOpenSettings
+}: {
+  className?: string;
+  onOpenSettings?: () => void;
+}) {
   const [panicUrl, setPanicUrl] = React.useState(() => {
     return localStorage.getItem("polytrack_panic_url") || "https://www.wikipedia.org/";
   });
@@ -17,10 +23,11 @@ export function PanicButton({ className = "" }: { className?: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
 
   const triggerPanic = React.useCallback(() => {
+    const target = localStorage.getItem("polytrack_panic_url") || panicUrl;
     try {
-      window.location.replace(panicUrl);
+      window.location.replace(target);
     } catch {
-      window.location.href = panicUrl;
+      window.location.href = target;
     }
   }, [panicUrl]);
 
@@ -40,7 +47,7 @@ export function PanicButton({ className = "" }: { className?: string }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [triggerPanic]);
 
-  // Click outside to close settings dropdown
+  // Click outside to close local settings dropdown
   React.useEffect(() => {
     if (!showSettings) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -62,14 +69,29 @@ export function PanicButton({ className = "" }: { className?: string }) {
     setShowSettings(false);
   };
 
+  const handleSettingsClick = () => {
+    if (onOpenSettings) {
+      onOpenSettings();
+    } else {
+      setShowSettings((prev) => !prev);
+    }
+  };
+
   return (
     <div ref={containerRef} className={`relative inline-flex items-center ${className}`}>
-      <div className="flex items-center gap-1 p-0.5 rounded-lg bg-zinc-900/80 border border-zinc-800">
+      <div
+        style={{
+          borderRadius: 12,
+          background: "rgba(255, 255, 255, 0.04)",
+          boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.06)",
+        }}
+        className="flex items-center gap-1 p-0.5"
+      >
         <button
           type="button"
           onClick={triggerPanic}
           title="Panic key: press ']' anywhere to redirect immediately"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-red-600/90 hover:bg-red-600 text-white font-medium text-xs tracking-tight transition-all active:scale-[0.98] cursor-pointer shadow-sm"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-600/90 hover:bg-red-500 text-white font-medium text-xs tracking-tight transition-all active:scale-[0.98] cursor-pointer shadow-sm"
         >
           <ShieldAlert className="w-3.5 h-3.5" />
           <span>Panic</span>
@@ -80,22 +102,29 @@ export function PanicButton({ className = "" }: { className?: string }) {
 
         <button
           type="button"
-          onClick={() => setShowSettings((prev) => !prev)}
-          title="Change redirect destination"
-          aria-label="Panic settings"
-          className="p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors cursor-pointer"
+          onClick={handleSettingsClick}
+          title="Settings (Site Lock, Panic Destination)"
+          aria-label="Settings"
+          className="p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.08] transition-colors cursor-pointer"
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {showSettings && (
-        <div className="absolute right-0 top-full mt-1.5 w-64 p-2.5 rounded-xl bg-zinc-900 border border-zinc-800 shadow-xl z-50 text-xs">
-          <div className="text-[11px] font-medium text-zinc-400 mb-1.5 px-1">
+        <div
+          className="absolute right-0 top-full mt-1.5 w-64 p-3 rounded-xl text-xs z-50 shadow-2xl"
+          style={{
+            background: "#1d1d1d",
+            boxShadow:
+              "inset 0 0 0 1px rgba(44,47,54,0.65), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 14px 30px -8px rgba(0,0,0,0.6)",
+          }}
+        >
+          <div className="text-[11px] font-medium text-zinc-400 mb-2 px-1">
             Redirect Destination
           </div>
 
-          <div className="space-y-0.5 mb-2">
+          <div className="space-y-0.5 mb-2.5">
             {PANIC_PRESETS.map((preset) => (
               <button
                 key={preset.name}
@@ -113,19 +142,19 @@ export function PanicButton({ className = "" }: { className?: string }) {
             ))}
           </div>
 
-          <div className="pt-2 border-t border-zinc-800">
-            <div className="flex gap-1">
+          <div className="pt-2 border-t border-white/[0.08]">
+            <div className="flex gap-1.5">
               <input
                 type="text"
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 placeholder="https://..."
-                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-1 text-zinc-200 placeholder-zinc-600 text-[11px] focus:outline-none focus:border-zinc-600 font-mono"
+                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-zinc-200 placeholder-zinc-600 text-[11px] focus:outline-none focus:border-zinc-500 font-mono"
               />
               <button
                 type="button"
                 onClick={() => saveCustomUrl(customInput)}
-                className="px-2.5 py-1 bg-zinc-100 hover:bg-white text-zinc-950 font-medium text-[11px] rounded-lg transition-colors cursor-pointer"
+                className="px-2.5 py-1 bg-white hover:bg-zinc-100 text-zinc-950 font-medium text-[11px] rounded-lg transition-colors cursor-pointer"
               >
                 Save
               </button>
