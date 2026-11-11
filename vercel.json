@@ -1,4 +1,10 @@
 {
   "outputDirectory": ".",
-  "trailingSlash": true
+  "trailingSlash": true,
+  "rewrites": [
+    {
+      "source": "/api/hub/:path*",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/:path*"
+    }
+  ]
 }
