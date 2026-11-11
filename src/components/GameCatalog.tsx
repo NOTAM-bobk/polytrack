@@ -230,7 +230,7 @@ export function GameCatalog() {
             return (
               <div
                 key={game.id}
-                className={`group relative flex w-full flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
+                className={`game-card group relative flex w-full flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
                   game.disabled
                     ? "bg-zinc-900/80 border-zinc-700/80"
                     : isFeatured

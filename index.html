@@ -76,6 +76,47 @@
         font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
+      /* Layered glass-metal treatment inspired by the supplied BorderBeam sample. */
+      .game-card {
+        isolation: isolate;
+        transform: perspective(900px) translateZ(0);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.045) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.35) inset,
+          0 8px 18px rgba(0, 0, 0, 0.18);
+        transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease, border-color 220ms ease;
+      }
+
+      .game-card::before {
+        content: "";
+        position: absolute;
+        z-index: 2;
+        pointer-events: none;
+        inset: 0 12px auto;
+        height: 1px;
+        opacity: 0.4;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+      }
+
+      .game-card:hover {
+        transform: perspective(900px) rotateX(1.1deg) translateY(-3px);
+        box-shadow:
+          0 1px 0 rgba(255, 255, 255, 0.075) inset,
+          0 -1px 0 rgba(0, 0, 0, 0.3) inset,
+          0 16px 28px rgba(0, 0, 0, 0.32),
+          0 0 20px rgba(255, 255, 255, 0.035);
+      }
+
+      .game-card:focus-within {
+        outline: 1px solid rgba(228, 228, 231, 0.45);
+        outline-offset: 2px;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .game-card { transition: none; }
+        .game-card:hover { transform: none; }
+      }
+
       /* Clean subtle scrollbars */
       ::-webkit-scrollbar {
         width: 5px;
