@@ -18,6 +18,74 @@
 		<div id="ui"></div>
 		<div id="transition-layer"></div>
 
+		<style>
+			#unblocked-games-prompt {
+				position: fixed;
+				inset: 0;
+				z-index: 99999;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 20px;
+				background: rgba(0, 0, 0, 0.78);
+				pointer-events: auto;
+			}
+			#unblocked-games-prompt[hidden] { display: none; }
+			#unblocked-games-prompt .prompt-card {
+				width: min(100%, 520px);
+				padding: 28px;
+				background: #192042;
+				color: #fff;
+				text-align: center;
+				box-shadow: 0 12px 48px rgba(0, 0, 0, 0.55);
+			}
+			#unblocked-games-prompt h2 { margin: 0 0 22px; font-size: 28px; }
+			#unblocked-games-prompt .prompt-actions {
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: center;
+				gap: 10px;
+			}
+			#unblocked-games-prompt .prompt-actions > * {
+				padding: 10px 16px;
+				border: 0;
+				background: #112052;
+				color: #fff;
+				font: inherit;
+				font-size: 18px;
+				text-decoration: none;
+				cursor: pointer;
+			}
+			#unblocked-games-prompt .prompt-actions > *:hover,
+			#unblocked-games-prompt .prompt-actions > *:focus-visible { background: #334b77; }
+		</style>
+		<div id="unblocked-games-prompt" role="dialog" aria-modal="true" aria-labelledby="unblocked-games-title">
+			<div class="prompt-card">
+				<h2 id="unblocked-games-title">View more unblocked games</h2>
+				<div class="prompt-actions">
+					<a id="unblocked-games-open" href="https://poly2.benlaunches.icu/" target="_blank" rel="noopener noreferrer">Open</a>
+					<button id="unblocked-games-close" type="button">Close</button>
+					<button id="unblocked-games-never" type="button">Close forever</button>
+				</div>
+			</div>
+		</div>
+		<script>
+			(() => {
+				const prompt = document.getElementById("unblocked-games-prompt");
+				const neverKey = "polytrack_hide_unblocked_games_prompt";
+				try {
+					prompt.hidden = localStorage.getItem(neverKey) === "true";
+				} catch {}
+				const dismiss = () => { prompt.hidden = true; };
+				document.getElementById("unblocked-games-open").addEventListener("click", dismiss);
+				document.getElementById("unblocked-games-close").addEventListener("click", dismiss);
+				document.getElementById("unblocked-games-never").addEventListener("click", () => {
+					try { localStorage.setItem(neverKey, "true"); } catch {}
+					dismiss();
+				});
+			})();
+		</script>
+
 		<script type="module" src="main.bundle.js" defer></script>
 	</body>
 </html>
