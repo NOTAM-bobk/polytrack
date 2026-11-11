@@ -29,47 +29,6 @@ const DEFAULT_GAMES: GameItem[] = [
     badgeColor: "amber"
   },
   {
-    id: "polytrack-031",
-    name: "PolyTrack v0.3.1",
-    url: "/0.3.1/index.html",
-    category: "polytrack",
-    description: "Classic high-speed PolyTrack with retro handling.",
-    tags: ["Classic", "Simulation", "Speedrun"],
-    version: "v0.3.1",
-    badge: "STABLE",
-    badgeColor: "blue"
-  },
-  {
-    id: "polytrack-submit",
-    name: "Custom Track Portal",
-    url: "/submit/",
-    category: "community",
-    description: "Create, import, and test custom tracks.",
-    tags: ["Editor", "Community", "Upload"],
-    badge: "CREATOR",
-    badgeColor: "emerald"
-  },
-  {
-    id: "polytrack-servers",
-    name: "Multiplayer Servers",
-    url: "/servers/",
-    category: "community",
-    description: "Browse multiplayer lobbies and racing servers.",
-    tags: ["Multiplayer", "Status", "Rooms"],
-    badge: "NET",
-    badgeColor: "purple"
-  },
-  {
-    id: "polytrack-yt",
-    name: "Speedrun Vault & Replays",
-    url: "/yt/",
-    category: "community",
-    description: "Watch speedruns, records, and track tutorials.",
-    tags: ["Replays", "Records", "Tutorials"],
-    badge: "VIDEO",
-    badgeColor: "red"
-  },
-  {
     id: "game-2048",
     name: "2048 Puzzle",
     url: "https://play2048.co/",
@@ -184,7 +143,6 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
   const tabs = [
     { id: "all", label: "All" },
     { id: "polytrack", label: "PolyTrack" },
-    { id: "community", label: "Community" },
     { id: "arcade", label: "Arcade" }
   ];
 
@@ -241,18 +199,20 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
         </div>
       </div>
 
-      {/* Catalog Grid */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+      {/* Horizontal game list */}
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-3 sm:p-4 min-h-0">
+        <div className="flex w-max min-w-full gap-3 pb-1">
           {filteredGames.map((game) => {
             const isFeatured = !!game.featured;
             return (
               <div
                 key={game.id}
-                className={`group relative flex flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
-                  isFeatured
-                    ? "bg-zinc-900 border-zinc-700 shadow-sm hover:border-zinc-500"
-                    : "bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/50"
+                className={`group relative flex w-[min(82vw,17rem)] sm:w-64 shrink-0 flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
+                  game.disabled
+                    ? "bg-zinc-950/40 border-zinc-800/60 opacity-50 grayscale"
+                    : isFeatured
+                      ? "bg-zinc-900 border-zinc-700 shadow-sm hover:border-zinc-500"
+                      : "bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/50"
                 }`}
               >
                 <div className="p-3 flex-1 flex flex-col">
@@ -277,22 +237,25 @@ export function GameCatalog({ onSelectGame }: GameCatalogProps) {
                 <div className="px-3 py-2 border-t border-zinc-800/80 flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => onSelectGame({ name: game.name, url: game.url, description: game.description })}
-                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950"
+                    disabled={game.disabled}
+                    className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
                   >
                     <Play className="w-3 h-3 fill-current" />
-                    <span>Play</span>
+                    <span>{game.disabled ? "Coming soon" : "Play"}</span>
                   </button>
 
-                  <a
-                    href={game.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title="Open in new tab"
-                    aria-label={`Open ${game.name} in a new tab`}
-                    className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  {!game.disabled && (
+                    <a
+                      href={game.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      title="Open in new tab"
+                      aria-label={`Open ${game.name} in a new tab`}
+                      className="p-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 border border-zinc-800 transition-colors cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                 </div>
               </div>
             );
