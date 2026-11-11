@@ -5,6 +5,12 @@ const RECENT_GAMES_KEY = "polytrack_recent_games";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_RECENT_GAMES = 6;
 
+const CHIP_STYLE: React.CSSProperties = {
+  borderRadius: 36,
+  background: "rgba(255, 255, 255, 0.04)",
+  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
+};
+
 type RecentGame = { id: string; playedAt: number };
 
 function loadRecentGames(): RecentGame[] {
@@ -230,63 +236,88 @@ export function GameCatalog() {
             return (
               <div
                 key={game.id}
-                className={`game-card group relative flex w-full flex-col rounded-xl border transition-all duration-200 overflow-hidden ${
-                  game.disabled
-                    ? "bg-zinc-900/80 border-zinc-700/80"
-                    : isFeatured
-                      ? "bg-zinc-900 border-zinc-700 shadow-sm hover:border-zinc-500"
-                      : "bg-zinc-950/80 border-zinc-800/80 hover:border-zinc-700 hover:bg-zinc-900/80"
-                }`}
+                className={`game-card group relative flex w-full flex-col transition-all duration-200 overflow-hidden ${
+                  isFeatured ? "featured" : ""
+                } ${game.disabled ? "opacity-75" : ""}`}
+                style={{
+                  background: "#1d1d1d",
+                  borderRadius: 20,
+                  boxShadow:
+                    "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 10px 24px -6px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)",
+                  fontFamily: "system-ui, -apple-system, sans-serif",
+                }}
               >
-                <div className="p-4 flex-1 flex flex-col">
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
-                    <h3 className="font-semibold text-base text-zinc-100 group-hover:text-white transition-colors flex items-center gap-1.5 min-w-0">
+                {/* BorderBeam effect matching attached component */}
+                <div className="border-beam-track" aria-hidden="true">
+                  <div className="border-beam-glow" />
+                </div>
+
+                <div className="p-4 sm:p-5 flex-1 flex flex-col relative z-10">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-semibold text-base text-zinc-100 group-hover:text-white transition-colors flex items-center gap-2 min-w-0">
                       <span className="truncate">{game.name}</span>
                       {isRecent && (
                         <span
                           title="You opened this game recently"
-                          className="shrink-0 px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-orange-500 text-zinc-950"
+                          style={CHIP_STYLE}
+                          className="shrink-0 px-2 py-0.5 text-[11px] font-medium text-amber-300"
                         >
                           Recent
                         </span>
                       )}
                     </h3>
                     {game.version && (
-                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono bg-zinc-800 text-zinc-400 border border-zinc-700/70">
+                      <span
+                        style={CHIP_STYLE}
+                        className="shrink-0 px-2.5 py-0.5 text-[11px] font-mono text-[#caccd2]"
+                      >
                         {game.version}
                       </span>
                     )}
                   </div>
 
-                  <p className="text-sm text-zinc-300 leading-relaxed mb-3 flex-1 line-clamp-2">
+                  <p className="text-[13px] leading-[18px] text-[#8B9099] mb-4 flex-1 line-clamp-2">
                     {game.description}
                   </p>
 
+                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/[0.06] mt-auto">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {game.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          style={CHIP_STYLE}
+                          className="inline-flex items-center h-6 px-2.5 text-[11px] leading-[14px] text-[#caccd2]"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
 
-                </div>
-
-                <div className="px-4 py-3 border-t border-zinc-800/80 flex items-center shrink-0">
-                  {game.disabled ? (
-                    <button
-                      type="button"
-                      disabled
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-zinc-800 text-zinc-200 cursor-not-allowed"
-                    >
-                      <Play className="w-3 h-3 fill-current" />
-                      <span>Coming soon</span>
-                    </button>
-                  ) : (
-                    <a
-                      href={game.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => markGamePlayed(game.id)}
-                      className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer bg-zinc-100 hover:bg-white text-zinc-950"
-                    >
-                      <Play className="w-3 h-3 fill-current" />
-                      <span>Play</span>
-                    </a>
-                  )}
+                    <div className="shrink-0">
+                      {game.disabled ? (
+                        <button
+                          type="button"
+                          disabled
+                          style={CHIP_STYLE}
+                          className="inline-flex items-center justify-center gap-1.5 h-7 px-3 text-xs font-medium text-zinc-500 cursor-not-allowed opacity-60"
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Coming soon</span>
+                        </button>
+                      ) : (
+                        <a
+                          href={game.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => markGamePlayed(game.id)}
+                          className="inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full text-xs font-semibold text-zinc-950 bg-white hover:bg-zinc-100 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer"
+                        >
+                          <Play className="w-3 h-3 fill-current" />
+                          <span>Play</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             );

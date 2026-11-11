@@ -76,45 +76,89 @@
         font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
-      /* Layered glass-metal treatment inspired by the supplied BorderBeam sample. */
+      /* Solid 3D card styling matching the attached BorderBeam / ChatInput component */
       .game-card {
+        background: #1d1d1d !important;
+        border-radius: 20px !important;
+        border: none !important;
+        position: relative;
         isolation: isolate;
-        transform: perspective(900px) translateZ(0);
+        transform: perspective(1000px) translateZ(0);
         box-shadow:
-          0 1px 0 rgba(255, 255, 255, 0.045) inset,
-          0 -1px 0 rgba(0, 0, 0, 0.35) inset,
-          0 8px 18px rgba(0, 0, 0, 0.18);
-        transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease, border-color 220ms ease;
-      }
-
-      .game-card::before {
-        content: "";
-        position: absolute;
-        z-index: 2;
-        pointer-events: none;
-        inset: 0 12px auto;
-        height: 1px;
-        opacity: 0.4;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
+          inset 0 0 0 1px rgba(44, 47, 54, 0.65),
+          inset 0 0 50px 0 rgba(255, 255, 255, 0.02),
+          0 10px 24px -6px rgba(0, 0, 0, 0.5),
+          0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease;
       }
 
       .game-card:hover {
-        transform: perspective(900px) rotateX(1.1deg) translateY(-3px);
+        transform: perspective(1000px) translateY(-3px) translateZ(6px);
         box-shadow:
-          0 1px 0 rgba(255, 255, 255, 0.075) inset,
-          0 -1px 0 rgba(0, 0, 0, 0.3) inset,
-          0 16px 28px rgba(0, 0, 0, 0.32),
-          0 0 20px rgba(255, 255, 255, 0.035);
+          inset 0 0 0 1px rgba(70, 75, 88, 0.8),
+          inset 0 0 50px 0 rgba(255, 255, 255, 0.035),
+          0 20px 36px -10px rgba(0, 0, 0, 0.7),
+          0 6px 14px rgba(0, 0, 0, 0.4) !important;
       }
 
       .game-card:focus-within {
-        outline: 1px solid rgba(228, 228, 231, 0.45);
+        outline: 1px solid rgba(228, 228, 231, 0.5);
         outline-offset: 2px;
+      }
+
+      /* BorderBeam animated traveling light along the 20px perimeter */
+      @keyframes border-beam-spin {
+        0% {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+
+      .border-beam-track {
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        padding: 1.5px;
+        pointer-events: none;
+        overflow: hidden;
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 250ms ease;
+        z-index: 4;
+      }
+
+      .game-card:hover .border-beam-track,
+      .game-card.featured .border-beam-track {
+        opacity: 1;
+      }
+
+      .border-beam-glow {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 320%;
+        height: 320%;
+        background: conic-gradient(
+          from 0deg,
+          transparent 0deg,
+          transparent 240deg,
+          #ffaa40 280deg,
+          #9c40ff 320deg,
+          #4079ff 350deg,
+          transparent 360deg
+        );
+        transform: translate(-50%, -50%);
+        animation: border-beam-spin 8s linear infinite;
       }
 
       @media (prefers-reduced-motion: reduce) {
         .game-card { transition: none; }
         .game-card:hover { transform: none; }
+        .border-beam-glow { animation: none; }
       }
 
       /* Clean subtle scrollbars */
