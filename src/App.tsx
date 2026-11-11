@@ -37,6 +37,7 @@ export function App() {
     <HalftoneHorizon
       speed={0.25}
       grain={0.02}
+      interactive={false}
       className="h-[100dvh] w-full font-sans text-zinc-100"
     >
       {isLocked && <SiteLock onUnlock={() => setIsUnlocked(true)} />}
@@ -144,7 +145,7 @@ export function App() {
           </div>
           <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <a href="mailto:hello@base31.org" className="hover:text-zinc-200 transition-colors">hello@base31.org</a>
-            <a href="/terms/" className="hover:text-zinc-200 transition-colors">Terms of Service</a>
+            <a href="/terms" className="hover:text-zinc-200 transition-colors">Terms of Service</a>
             <a href="/submit/" className="hover:text-zinc-200 transition-colors">Submit a game</a>
           </nav>
         </footer>

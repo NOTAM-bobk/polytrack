@@ -47,7 +47,73 @@ export interface GameItem {
   badgeColor?: string;
 }
 
-const DEFAULT_GAMES: GameItem[] = [
+// "BitLife Simulator" and "BitLife", "Ducklings.io" and "Ducklings", and "Retro Snake" and
+// "Snake" are the same game, so compare names without punctuation and accept one as a whole-word
+// part of the other to avoid listing a game twice.
+function nameKey(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function urlKey(url: string) {
+  return url.trim().toLowerCase().replace(/\/+$/, "");
+}
+
+function isSubdomainUrl(url: string) {
+  try {
+    return new URL(url, "https://benlaunches.icu").hostname.endsWith(".benlaunches.icu");
+  } catch {
+    return false;
+  }
+}
+
+function sameGame(a: GameItem, b: GameItem) {
+  if (a.id === b.id) return true;
+  if (urlKey(a.url) === urlKey(b.url)) return true;
+  const x = nameKey(a.name);
+  const y = nameKey(b.name);
+  if (!x || !y) return false;
+  return x === y || x.startsWith(y) || y.startsWith(x) || x.includes(y) || y.includes(x);
+}
+
+// Two entries for one game: keep the subdomain URL, e.g. cookie.benlaunches.icu over a bare path.
+function preferredUrl(current: string, incoming: string) {
+  if (!incoming || incoming === "#") return current;
+  if (isSubdomainUrl(current) && !isSubdomainUrl(incoming)) return current;
+  return incoming;
+}
+
+// Merges the games/config.json entries into the built-in list without repeating a game, keeping
+// the built-in order so the catalog's layout stays deliberate.
+export function mergeCatalog(defaults: GameItem[], loaded: GameItem[]): GameItem[] {
+  const remaining = [...loaded];
+  const merged: GameItem[] = [];
+
+  for (const item of defaults) {
+    const index = remaining.findIndex((entry) => sameGame(item, entry));
+    if (index === -1) {
+      merged.push(item);
+      continue;
+    }
+    const [match] = remaining.splice(index, 1);
+    merged.push({
+      ...item,
+      url: preferredUrl(item.url, match.url),
+      description:
+        match.description && !match.description.includes("from games catalog")
+          ? match.description
+          : item.description,
+      disabled: match.disabled ?? item.disabled
+    });
+  }
+
+  for (const item of remaining) {
+    if (!merged.some((entry) => sameGame(entry, item))) merged.push(item);
+  }
+
+  return merged;
+}
+
+export const DEFAULT_GAMES: GameItem[] = [
   {
     id: "polytrack-050",
     name: "PolyTrack v0.5.0",
@@ -166,30 +232,7 @@ export function GameCatalog() {
             disabled: !!g.disabled
           }));
 
-          setGames((prev) => {
-            const updated = prev.map((item) => {
-              const matched = loaded.find(
-                (l) => l.name.toLowerCase() === item.name.toLowerCase() || l.id === item.id
-              );
-              if (matched) {
-                return {
-                  ...item,
-                  url: matched.url && matched.url !== "#" ? matched.url : item.url,
-                  description: matched.description && !matched.description.includes("from games catalog")
-                    ? matched.description
-                    : item.description,
-                  disabled: matched.disabled ?? item.disabled,
-                };
-              }
-              return item;
-            });
-
-            const newItems = loaded.filter(
-              (l) => !prev.some((p) => p.name.toLowerCase() === l.name.toLowerCase())
-            );
-
-            return [...updated, ...newItems];
-          });
+          setGames((prev) => mergeCatalog(prev, loaded));
         }
       })
       .catch(() => {});
