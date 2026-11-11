@@ -31,7 +31,7 @@ const DEFAULT_GAMES: GameItem[] = [
   {
     id: "game-2048",
     name: "2048 Puzzle",
-    url: "https://play2048.co/",
+    url: "https://2048.benlaunches.icu/",
     category: "arcade",
     description: "Combine numbered tiles to reach 2048.",
     tags: ["Logic", "Puzzle", "Quick Play"]
