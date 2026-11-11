@@ -1,0 +1,18 @@
+{
+  "entrypoint": "polytrack-hub-worker.js",
+  "compatibilityDate": "2026-11-01",
+  "modules": [
+    {
+      "name": "polytrack-hub-worker.js",
+      "type": "esm",
+      "path": "./polytrack-hub-worker.js"
+    }
+  ],
+  "bindings": [
+    {
+      "name": "DB",
+      "type": "d1",
+      "databaseName": "polytrack-hub-db"
+    }
+  ]
+}

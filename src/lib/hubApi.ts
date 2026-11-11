@@ -1,3 +1,5 @@
+const HUB_API = "https://polytrack-hub-api.sawyerbobk563.workers.dev";
+
 export interface HubMessage {
   id: string;
   createdAt: string;
@@ -6,14 +8,14 @@ export interface HubMessage {
 }
 
 export async function loadMessages(): Promise<HubMessage[]> {
-  const response = await fetch("/api/messages?limit=100", { headers: { Accept: "application/json" } });
+  const response = await fetch(`${HUB_API}/api/messages?limit=100`, { headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error("Message service unavailable");
   const data = await response.json();
   return Array.isArray(data.messages) ? data.messages : [];
 }
 
 export async function sendMessage(author: string, text: string): Promise<HubMessage> {
-  const response = await fetch("/api/messages", {
+  const response = await fetch(`${HUB_API}/api/messages`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ author, text }),
@@ -24,7 +26,7 @@ export async function sendMessage(author: string, text: string): Promise<HubMess
 }
 
 export async function recordPageView(): Promise<number> {
-  const response = await fetch("/api/views", { method: "POST", headers: { Accept: "application/json" } });
+  const response = await fetch(`${HUB_API}/api/views`, { method: "POST", headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error("View counter unavailable");
   const data = await response.json();
   return Number(data.total || 0);
