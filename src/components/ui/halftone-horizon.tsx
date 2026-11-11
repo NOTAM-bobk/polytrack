@@ -1088,9 +1088,8 @@ vec3 shade(vec2 frag) {
   // the light wherever it passes
   float screen = 1.0 - smoothstep(end * 0.75, end, tone);
   screen = max(screen, smoothstep(0.05, 0.6, lit));
-  // a short fade in from the lightest shade at the very start
   vec3 col = mix(smooth_, printed, screen);
-  return mix(oklabToLinear(u_colors[u_count - 1]), col, smoothstep(0.0, 0.6, u_age));
+  return col;
 }
 `;
 

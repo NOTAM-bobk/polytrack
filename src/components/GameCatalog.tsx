@@ -28,11 +28,18 @@ function loadRecentGames(): RecentGame[] {
   }
 }
 
+const CATEGORIES = ["racing", "puzzle", "casual"] as const;
+type GameCategory = (typeof CATEGORIES)[number];
+
+function isCategory(value: unknown): value is GameCategory {
+  return typeof value === "string" && (CATEGORIES as readonly string[]).includes(value);
+}
+
 export interface GameItem {
   id: string;
   name: string;
   url: string;
-  category: "polytrack" | "community" | "classic" | "arcade";
+  category: GameCategory;
   description: string;
   tags: string[];
   featured?: boolean;
@@ -47,7 +54,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "polytrack-050",
     name: "PolyTrack v0.5.0",
     url: "/0.5.0/index.html",
-    category: "polytrack",
+    category: "racing",
     description: "Latest release with new tracks and custom liveries.",
     tags: ["Latest", "3D Physics", "Tracks", "Customization"],
     featured: true,
@@ -59,7 +66,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-2048",
     name: "2048 Puzzle",
     url: "https://2048.benlaunches.icu/",
-    category: "arcade",
+    category: "puzzle",
     description: "Combine numbered tiles to reach 2048.",
     tags: ["Logic", "Puzzle", "Quick Play"]
   },
@@ -67,7 +74,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-bitlife",
     name: "BitLife Simulator",
     url: "/games/bitlife.html",
-    category: "arcade",
+    category: "casual",
     description: "A branching text-based life simulator.",
     tags: ["Simulation", "RPG"]
   },
@@ -75,7 +82,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-moto-x3m",
     name: "Moto X3M",
     url: "https://poki.com/en/g/moto-x3m",
-    category: "arcade",
+    category: "racing",
     description: "Race through stunt courses, loops, and hazards.",
     tags: ["Stunts", "Racing", "Arcade"]
   },
@@ -83,7 +90,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-ducklings",
     name: "Ducklings.io",
     url: "https://ducklings.io/",
-    category: "arcade",
+    category: "casual",
     description: "Rescue ducklings and grow your nest.",
     tags: ["Multiplayer", "Casual"]
   },
@@ -91,7 +98,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-snake",
     name: "Retro Snake",
     url: "https://snakegame.org/",
-    category: "classic",
+    category: "puzzle",
     description: "The classic snake arcade game.",
     tags: ["Retro", "Classic", "Arcade"]
   },
@@ -99,7 +106,7 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-monster-track",
     name: "Monster Track",
     url: "/games/monster-track.html",
-    category: "arcade",
+    category: "racing",
     description: "Take a monster truck through off-road courses.",
     tags: ["4x4", "Offroad", "Physics"]
   },
@@ -107,15 +114,24 @@ const DEFAULT_GAMES: GameItem[] = [
     id: "game-block-blast",
     name: "Block Blast",
     url: "/games/block-blast.html",
-    category: "arcade",
+    category: "puzzle",
     description: "Clear rows and columns in this block puzzle.",
     tags: ["Puzzle", "Blocks", "Casual"]
+  },
+  {
+    id: "game-eaglercraft",
+    name: "Eaglercraft",
+    url: "https://eaglercraft.com/",
+    category: "casual",
+    description: "Browser-based Minecraft with survival and multiplayer.",
+    tags: ["Sandbox", "Minecraft", "Multiplayer"],
+    disabled: true
   }
 ];
 
 export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
-  const [activeTab, setActiveTab] = React.useState<string>("all");
+  const [activeTab, setActiveTab] = React.useState<GameCategory>("racing");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
@@ -135,7 +151,7 @@ export function GameCatalog() {
   }, []);
 
   React.useEffect(() => {
-    fetch("/games/config.json")
+    fetch("/games/config.json", { cache: "no-store" })
       .then((res) => {
         if (!res.ok) throw new Error("Config not found");
         return res.json();
@@ -146,14 +162,14 @@ export function GameCatalog() {
             id: `cfg-${g.subdomain || idx}`,
             name: g.name || "Game",
             url: g.url || "#",
-            category: "arcade" as const,
-            description: `${g.name} arcade game from games catalog.`,
+            category: isCategory(g.category) ? g.category : "casual",
+            description: g.description || `${g.name} game from games catalog.`,
             tags: ["Catalog", "Web"],
             disabled: !!g.disabled
           }));
 
           setGames((prev) => {
-            const polyItems = prev.filter((item) => item.category === "polytrack" || item.category === "community");
+            const polyItems = prev.filter((item) => item.featured);
             const nonDuplicates = loaded.filter(
               (l) => !polyItems.some((p) => p.name.toLowerCase() === l.name.toLowerCase())
             );
@@ -166,9 +182,7 @@ export function GameCatalog() {
 
   const filteredGames = React.useMemo(() => {
     return games.filter((game) => {
-      if (activeTab === "polytrack" && game.category !== "polytrack") return false;
-      if (activeTab === "community" && game.category !== "community") return false;
-      if (activeTab === "arcade" && game.category !== "arcade" && game.category !== "classic") return false;
+      if (game.category !== activeTab) return false;
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
@@ -179,10 +193,10 @@ export function GameCatalog() {
     });
   }, [games, activeTab, searchQuery]);
 
-  const tabs = [
-    { id: "all", label: "All" },
-    { id: "polytrack", label: "PolyTrack" },
-    { id: "arcade", label: "Arcade" }
+  const tabs: { id: GameCategory; label: string }[] = [
+    { id: "racing", label: "Racing" },
+    { id: "puzzle", label: "Puzzle" },
+    { id: "casual", label: "Casual" }
   ];
 
   return (
@@ -241,6 +255,21 @@ export function GameCatalog() {
       {/* Game list */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0">
         <div className="flex flex-col gap-3">
+          <div
+            aria-label="Advertisement space"
+            className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/30 px-3 py-2.5"
+          >
+            <div className="min-w-0">
+              <div className="text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-600">Ad space</div>
+              <div className="truncate text-xs text-zinc-400">Reach students and gamers here</div>
+            </div>
+            <a
+              href="mailto:hello@base31.org?subject=Ad%20space%20on%20Education%20Games"
+              className="shrink-0 rounded-lg border border-zinc-700/70 bg-zinc-900/60 px-2.5 py-1 text-[11px] font-medium text-zinc-300 transition-colors hover:border-zinc-600 hover:text-white"
+            >
+              Advertise
+            </a>
+          </div>
           {filteredGames.map((game) => {
             const isFeatured = !!game.featured;
             const isRecent = recentIds.has(game.id);

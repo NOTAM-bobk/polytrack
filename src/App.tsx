@@ -13,7 +13,6 @@ export function App() {
         <header className="min-h-12 px-2.5 sm:px-4 py-1 bg-zinc-950/90 border-b border-zinc-800/80 flex items-center justify-between shrink-0 z-20 backdrop-blur-md">
           <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <a href="/" className="flex items-center gap-2 group shrink-0">
-              <div className="w-6 h-6 rounded-lg bg-amber-300 text-zinc-950 flex items-center justify-center font-black text-xs shadow-sm">E</div>
               <span className="font-semibold text-sm tracking-tight text-zinc-100 group-hover:text-white transition-colors whitespace-nowrap">"Education" Games</span>
             </a>
             <nav className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-0.5">
@@ -44,7 +43,7 @@ export function App() {
               href="https://verifieddr.com/website/benlaunches-icu"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center opacity-80 hover:opacity-100 transition-opacity shrink-0"
+              className="hidden sm:inline-flex items-center opacity-80 hover:opacity-100 transition-opacity shrink-0"
             >
               <img
                 src="https://verifieddr.com/badge/benlaunches-icu-dark.svg?style=minimal&metric=dr"
