@@ -7,6 +7,12 @@
       "url": "/games/bitlife.html",
       "category": "casual"
     },
+     {
+      "subdomain": "imposiblequiz",
+      "name": "impossible-Quiz",
+      "url": "/games/the-impossible-quiz.html",
+      "category": "fun"
+    },
     {
       "subdomain": "ducklings",
       "name": "Ducklings",
