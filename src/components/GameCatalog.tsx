@@ -1,17 +1,31 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles } from "lucide-react";
 import { loadGameStats, recordGameClick } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_RECENT_GAMES = 6;
 const SEARCH_PARAM = "q";
+const CATEGORY_PARAM = "c";
 
 const CHIP_STYLE: React.CSSProperties = {
   borderRadius: 36,
   background: "rgba(255, 255, 255, 0.04)",
   boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
 };
+
+export const CATEGORY_FILTERS = [
+  { id: "all", label: "All Games" },
+  { id: "flash", label: "⚡ Flash" },
+  { id: "action", label: "⚔️ Action" },
+  { id: "driving", label: "🏎️ Driving" },
+  { id: "sports", label: "🏈 Sports" },
+  { id: "arcade", label: "🕹️ Arcade" },
+  { id: "puzzle", label: "🧩 Puzzle" },
+  { id: "casual", label: "🎮 Casual" },
+] as const;
+
+type CategoryId = typeof CATEGORY_FILTERS[number]["id"];
 
 type RecentGame = { id: string; playedAt: number };
 
@@ -44,6 +58,16 @@ function initialSearchQuery() {
   }
 }
 
+function initialCategory(): CategoryId {
+  try {
+    const param = new URLSearchParams(window.location.search).get(CATEGORY_PARAM);
+    if (param && CATEGORY_FILTERS.some((c) => c.id === param)) {
+      return param as CategoryId;
+    }
+  } catch {}
+  return "all";
+}
+
 export interface GameItem {
   id: string;
   name: string;
@@ -58,9 +82,6 @@ export interface GameItem {
   clicks?: number;
 }
 
-// "BitLife Simulator" and "BitLife", "Ducklings.io" and "Ducklings", and "Retro Snake" and
-// "Snake" are the same game, so compare names without punctuation and accept one as a whole-word
-// part of the other to avoid listing a game twice.
 function nameKey(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -86,15 +107,12 @@ function sameGame(a: GameItem, b: GameItem) {
   return x === y || x.startsWith(y) || y.startsWith(x) || x.includes(y) || y.includes(x);
 }
 
-// Two entries for one game: keep the subdomain URL, e.g. cookie.benlaunches.icu over a bare path.
 function preferredUrl(current: string, incoming: string) {
   if (!incoming || incoming === "#") return current;
   if (isSubdomainUrl(current) && !isSubdomainUrl(incoming)) return current;
   return incoming;
 }
 
-// Merges the games/config.json entries into the built-in list without repeating a game, keeping
-// the built-in order so the catalog's layout stays deliberate.
 export function mergeCatalog(defaults: GameItem[], loaded: GameItem[]): GameItem[] {
   const remaining = [...loaded];
   const merged: GameItem[] = [];
@@ -129,146 +147,285 @@ export const DEFAULT_GAMES: GameItem[] = [
     id: "polytrack-050",
     name: "PolyTrack v0.5.0",
     url: "/0.5.0/index.html",
-    description: "Latest release with new tracks and custom liveries.",
-    tags: ["Latest", "3D Physics", "Tracks", "Customization"],
+    description: "Latest release with new tracks, realistic physics, and custom liveries.",
+    tags: ["Latest", "3D Physics", "Tracks", "Driving", "Customization"],
     featured: true,
     version: "v0.5.0",
     badge: "FLAGSHIP",
     badgeColor: "amber"
   },
   {
+    id: "game-retro-bowl",
+    name: "Retro Bowl",
+    url: "/games/retro-bowl.html",
+    description: "Manage your NFL team, draft players, call the plays on offense, and win the championship in this retro football sim.",
+    tags: ["Sports", "Football", "Retro", "Arcade", "Management"]
+  },
+  {
+    id: "game-drive-mad",
+    name: "Drive Mad",
+    url: "/games/drive-mad.html",
+    description: "Navigate wild 3D obstacle courses balancing throttle, stunts, jumps, and vehicle physics.",
+    tags: ["Driving", "3D Physics", "Stunts", "Obstacles"]
+  },
+  {
+    id: "game-moto-x3m",
+    name: "Moto X3M",
+    url: "/games/moto-x3m.html",
+    description: "Race your motorbike through hazardous stunt tracks, loops, saw blades, and explosive obstacles.",
+    tags: ["Driving", "Stunts", "Racing", "Arcade"]
+  },
+  {
+    id: "game-drift-boss",
+    name: "Drift Boss",
+    url: "/games/drift-boss.html",
+    description: "Time one-touch drifts around hairpin corners along narrow sky-high roadways without falling off.",
+    tags: ["Driving", "Drift", "Racing", "Skill"]
+  },
+  {
+    id: "game-tunnel-rush",
+    name: "Tunnel Rush",
+    url: "/games/tunnel-rush.html",
+    description: "Blaze down spinning 3D neon tunnels dodging high-speed barriers in this intense reflex test.",
+    tags: ["Action", "3D", "Reflex", "Arcade"]
+  },
+  {
+    id: "game-ovo",
+    name: "OvO",
+    url: "/games/ovo.html",
+    description: "Fast-paced parkour speedrunning platformer: slide, dive, and wall-jump through puzzle stages.",
+    tags: ["Arcade", "Parkour", "Platformer", "Speedrun"]
+  },
+  {
+    id: "game-stickman-hook",
+    name: "Stickman Hook",
+    url: "/games/stickman-hook.html",
+    description: "Grapple, swing, and bounce across acrobatic levels with physics-based momentum.",
+    tags: ["Arcade", "Physics", "Skill", "Stickman"]
+  },
+  {
+    id: "game-doodle-jump",
+    name: "Doodle Jump",
+    url: "/games/doodle-jump.html",
+    description: "Jump up floating platforms, dodge monsters, and aim for high scores in the legendary classic.",
+    tags: ["Arcade", "Classic", "Retro", "Jumper"]
+  },
+  {
+    id: "game-flappy-bird",
+    name: "Flappy Bird",
+    url: "/games/flappy-bird.html",
+    description: "Tap to flap and guide your bird through green pipes in the notoriously challenging arcade hit.",
+    tags: ["Arcade", "Retro", "Skill", "Classic"]
+  },
+  {
+    id: "game-crossy-road",
+    name: "Crossy Road",
+    url: "/games/crossy-road.html",
+    description: "Hop across busy highways, train tracks, and roaring rivers without getting squashed.",
+    tags: ["Arcade", "Casual", "Endless", "Classic"]
+  },
+  {
+    id: "game-tiny-fishing",
+    name: "Tiny Fishing",
+    url: "/games/tiny-fishing.html",
+    description: "Cast your hook deep into the lake, catch rare fish, and upgrade your gear for bigger catches.",
+    tags: ["Casual", "Fishing", "Upgrade", "Idle"]
+  },
+  {
+    id: "game-cookie-clicker",
+    name: "Cookie Clicker",
+    url: "/games/cookie-clicker.html",
+    description: "Bake cookies, hire grandmas, build factories, and construct an astronomical cookie empire.",
+    tags: ["Casual", "Idle", "Clicker", "Management"]
+  },
+  {
+    id: "game-2048",
+    name: "2048 Puzzle",
+    url: "/games/2048.html",
+    description: "Slide and combine matching numbered tiles on a 4x4 grid to reach the 2048 tile.",
+    tags: ["Puzzle", "Logic", "Math", "Quick Play"]
+  },
+  {
     id: "game-bitlife",
     name: "BitLife Simulator",
     url: "/games/bitlife.html",
-    description: "A branching text-based life simulator.",
-    tags: ["Simulation", "RPG"]
+    description: "A branching text-based life simulator with hundreds of career, relationship, and crime paths.",
+    tags: ["Casual", "Simulation", "RPG", "Choice"]
   },
   {
     id: "game-impossible-quiz",
     name: "Impossible Quiz",
     url: "/games/the-impossible-quiz.html",
-    description: "110 questions. Surely you can get through them all.",
-    tags: ["Quiz", "Trivia", "Challenge"]
+    description: "110 devious questions with traps, trick answers, and wild logic puzzles.",
+    tags: ["Puzzle", "Quiz", "Trivia", "Challenge"]
   },
   {
     id: "game-run3",
     name: "Run 3",
     url: "/games/clrun3.html",
-    description: "Jump around space and explore cosmic tunnels.",
-    tags: ["Runner", "Platformer", "Space", "Physics"]
+    description: "Jump around space tunnels, rotate gravity, and unlock alien runners across cosmic pathways.",
+    tags: ["Arcade", "Runner", "Platformer", "Space", "Physics"]
   },
   {
     id: "game-awsome-tanks",
     name: "Awsome Tanks",
     url: "/games/awsome-tanks.html",
-    description: "Use a tank, upgrade weapons, and destroy enemy bases.",
-    tags: ["Tanks", "Shooter", "Action", "Upgrades"]
+    description: "Command a tank, blast enemy strongholds, and buy heavy cannon and armor upgrades.",
+    tags: ["Action", "Tanks", "Shooter", "Upgrades"]
   },
   {
     id: "game-brawl-sim-3d",
     name: "Brawl Simulator 3D",
     url: "/games/clbrawlsimulator3d.html",
-    description: "3D arena combat with custom fighters and dynamic brawling action.",
-    tags: ["3D Combat", "Action", "Arena", "Brawler"]
+    description: "3D arena combat with custom fighters, combo attacks, and dynamic brawling action.",
+    tags: ["Action", "3D Combat", "Arena", "Brawler"]
+  },
+  {
+    id: "game-super-smash-flash",
+    name: "Super Smash Flash",
+    url: "/games/super-smash-flash.html",
+    description: "Brawl as legendary fighters like Mario, Sonic, Goku, Link, and Mega Man in this iconic crossover.",
+    tags: ["Flash", "Action", "Fighting", "Crossover"]
+  },
+  {
+    id: "game-super-mario-63",
+    name: "Super Mario 63",
+    url: "/games/super-mario-63.html",
+    description: "Masterpiece Flash adventure inspired by Super Mario 64 and Sunshine with the FLUDD water pack.",
+    tags: ["Flash", "Adventure", "Mario", "Platformer"]
+  },
+  {
+    id: "game-fancy-pants-adventures",
+    name: "Fancy Pants Adventures",
+    url: "/games/fancy-pants-adventures.html",
+    description: "Sprint, slide, and flip through hand-drawn world stages with smooth parkour momentum.",
+    tags: ["Flash", "Adventure", "Parkour", "Platformer"]
+  },
+  {
+    id: "game-dad-n-me",
+    name: "Dad 'n Me",
+    url: "/games/dad-n-me.html",
+    description: "Classic beat-'em-up brawler by Dan Paladin and Tom Fulp across the playground neighborhood.",
+    tags: ["Flash", "Action", "Brawler", "Fighting"]
+  },
+  {
+    id: "game-portal-flash",
+    name: "Portal: The Flash Version",
+    url: "/games/portal-flash.html",
+    description: "40 mind-bending test chambers with aperture physics, lasers, and dual portal guns.",
+    tags: ["Flash", "Puzzle", "Logic", "Sci-Fi"]
+  },
+  {
+    id: "game-henry-stickmin-prison",
+    name: "Henry Stickmin: Escaping the Prison",
+    url: "/games/henry-stickmin-escaping-the-prison.html",
+    description: "Help Henry bust out of prison with crazy gadgets, stealth, and hilarious fail scenes.",
+    tags: ["Flash", "Adventure", "Stickman", "Funny"]
+  },
+  {
+    id: "game-henry-stickmin",
+    name: "Henry Stickmin: Breaking the Bank",
+    url: "/games/henry-stickmin-breaking-the-bank.html",
+    description: "Choose wild and hilarious methods to break into the desert bank vault with Henry.",
+    tags: ["Flash", "Adventure", "Stickman", "Funny"]
+  },
+  {
+    id: "game-stick-rpg",
+    name: "Stick RPG",
+    url: "/games/stick-rpg.html",
+    description: "Live a stickman's life: work corporate jobs, study, skateboard, and build wealth in Stick City.",
+    tags: ["Flash", "Casual", "Life Sim", "RPG", "Stickman"]
   },
   {
     id: "game-bloons-td4",
     name: "Bloons Tower Defense 4",
     url: "/games/bloons-td4.html",
     description: "Place dart monkeys, tack shooters, and super monkeys to pop incoming bloon waves.",
-    tags: ["Flash", "Tower Defense", "Strategy", "Monkeys"]
+    tags: ["Flash", "Puzzle", "Tower Defense", "Strategy", "Monkeys"]
+  },
+  {
+    id: "game-bloons-super-monkey",
+    name: "Bloons Super Monkey",
+    url: "/games/bloons-super-monkey.html",
+    description: "Take to the skies as Super Monkey and blast thousands of bloons with laser and plasma beams.",
+    tags: ["Flash", "Action", "Shooter", "Arcade"]
   },
   {
     id: "game-worlds-hardest-game",
     name: "The World's Hardest Game",
     url: "/games/the-worlds-hardest-game.html",
     description: "Guide your red square through 30 treacherous levels. Avoid the blue balls at all costs.",
-    tags: ["Flash", "Skill", "Hard", "Classic"]
+    tags: ["Flash", "Arcade", "Skill", "Hard", "Classic"]
   },
   {
     id: "game-learn-to-fly",
     name: "Learn to Fly",
     url: "/games/learn-to-fly.html",
-    description: "Upgrade your glider, rockets, and ramp to help a determined penguin soar.",
-    tags: ["Flash", "Upgrade", "Launcher", "Casual"]
+    description: "Upgrade your glider, rockets, and ramp to help a determined penguin soar over Antarctica.",
+    tags: ["Flash", "Casual", "Upgrade", "Launcher"]
   },
   {
     id: "game-papas-pizzeria",
     name: "Papa's Pizzeria",
     url: "/games/papas-pizzeria.html",
     description: "Run Papa Louie's pizzeria: take orders, top pizzas, bake to perfection, and cut slices.",
-    tags: ["Flash", "Cooking", "Management", "Casual"]
+    tags: ["Flash", "Casual", "Cooking", "Management"]
   },
   {
     id: "game-bloxorz",
     name: "Bloxorz",
     url: "/games/bloxorz.html",
     description: "Roll the 3D rectangular block across challenging puzzle stages and into the square hole.",
-    tags: ["Flash", "3D Puzzle", "Logic", "Brain"]
+    tags: ["Flash", "Puzzle", "3D Puzzle", "Logic", "Brain"]
   },
   {
     id: "game-age-of-war",
     name: "Age of War",
     url: "/games/age-of-war.html",
     description: "Wage war across five ages of evolution from primitive cavemen to futuristic cyborgs.",
-    tags: ["Flash", "Strategy", "Defense", "Evolution"]
-  },
-  {
-    id: "game-henry-stickmin",
-    name: "Henry Stickmin: Breaking the Bank",
-    url: "/games/henry-stickmin-breaking-the-bank.html",
-    description: "Choose wild and hilarious methods to break into the bank vault with Henry.",
-    tags: ["Flash", "Stickman", "Funny", "Adventure"]
+    tags: ["Flash", "Puzzle", "Strategy", "Defense", "Evolution"]
   },
   {
     id: "game-duck-life",
     name: "Duck Life",
     url: "/games/duck-life.html",
     description: "Train your duck in running, swimming, and flying to win races and save the farm.",
-    tags: ["Flash", "Training", "Racing", "Pets"]
+    tags: ["Flash", "Casual", "Training", "Racing", "Pets"]
+  },
+  {
+    id: "game-duck-life-2",
+    name: "Duck Life 2: World Champion",
+    url: "/games/duck-life-2.html",
+    description: "Train your champion duck in running, flying, swimming, and climbing to win world trophies.",
+    tags: ["Flash", "Casual", "Training", "Racing", "Pets"]
   },
   {
     id: "game-riddle-school",
     name: "Riddle School",
     url: "/games/riddle-school.html",
     description: "Help Phil escape from a boring school day in this classic point-and-click puzzle adventure.",
-    tags: ["Flash", "Escape", "Puzzle", "School"]
+    tags: ["Flash", "Puzzle", "Escape", "School"]
   },
   {
-    id: "game-cookie-clicker",
-    name: "Cookie Clicker",
-    url: "https://cookie.benlaunches.icu/",
-    description: "Bake cookies and build a sweet empire.",
-    tags: ["Idle", "Clicker", "Casual"]
-  },
-  {
-    id: "game-2048",
-    name: "2048 Puzzle",
-    url: "https://2048.benlaunches.icu/",
-    description: "Combine numbered tiles to reach 2048.",
-    tags: ["Logic", "Puzzle", "Quick Play"]
+    id: "game-riddle-school-3",
+    name: "Riddle School 3",
+    url: "/games/riddle-school-3.html",
+    description: "Phil's third school escape with fun puzzles, clever inventory combinations, and snappy humor.",
+    tags: ["Flash", "Puzzle", "Escape", "School"]
   },
   {
     id: "site-unblocked-movies",
     name: "Unblocked Movies",
     url: "https://nxsha.space/",
     description: "Watch movies and shows in your browser.",
-    tags: ["Movies", "Streaming", "Media"]
+    tags: ["Casual", "Movies", "Streaming", "Media"]
   },
   {
     id: "game-monster-track",
     name: "Monster Track",
     url: "https://monster.benlaunches.icu/",
     description: "Take a monster truck through off-road courses.",
-    tags: ["4x4", "Offroad", "Physics"],
-    disabled: true
-  },
-  {
-    id: "game-moto-x3m",
-    name: "Moto X3M",
-    url: "https://poki.com/en/g/moto-x3m",
-    description: "Race through stunt courses, loops, and hazards.",
-    tags: ["Stunts", "Racing", "Arcade"],
+    tags: ["Driving", "4x4", "Offroad", "Physics"],
     disabled: true
   },
   {
@@ -276,7 +433,7 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Ducklings.io",
     url: "https://ducklings.io/",
     description: "Rescue ducklings and grow your nest.",
-    tags: ["Multiplayer", "Casual"],
+    tags: ["Casual", "Multiplayer"],
     disabled: true
   },
   {
@@ -284,7 +441,7 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Retro Snake",
     url: "https://snakegame.org/",
     description: "The classic snake arcade game.",
-    tags: ["Retro", "Classic", "Arcade"],
+    tags: ["Arcade", "Retro", "Classic"],
     disabled: true
   },
   {
@@ -300,10 +457,137 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Eaglercraft",
     url: "https://eaglercraft.com/",
     description: "Browser-based Minecraft with survival and multiplayer.",
-    tags: ["Sandbox", "Minecraft", "Multiplayer"],
+    tags: ["Casual", "Sandbox", "Minecraft", "Multiplayer"],
     disabled: true
   }
 ];
+
+function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
+  if (categoryId === "all") return true;
+  const tagsLower = game.tags.map((t) => t.toLowerCase());
+  const nameLower = game.name.toLowerCase();
+
+  switch (categoryId) {
+    case "flash":
+      return (
+        tagsLower.includes("flash") ||
+        game.url.toLowerCase().includes("flash") ||
+        game.url.toLowerCase().includes("swf")
+      );
+    case "action":
+      return (
+        tagsLower.some((t) =>
+          [
+            "action",
+            "combat",
+            "3d combat",
+            "arena",
+            "brawler",
+            "shooter",
+            "tanks",
+            "fighting",
+            "crossover"
+          ].includes(t)
+        ) ||
+        nameLower.includes("smash") ||
+        nameLower.includes("brawl") ||
+        nameLower.includes("tank")
+      );
+    case "driving":
+      return (
+        tagsLower.some((t) =>
+          [
+            "driving",
+            "racing",
+            "tracks",
+            "stunts",
+            "drift",
+            "4x4",
+            "offroad",
+            "cars"
+          ].includes(t)
+        ) ||
+        nameLower.includes("drive") ||
+        nameLower.includes("moto") ||
+        nameLower.includes("drift") ||
+        nameLower.includes("polytrack")
+      );
+    case "sports":
+      return (
+        tagsLower.some((t) => ["sports", "football"].includes(t)) ||
+        nameLower.includes("bowl") ||
+        nameLower.includes("retro bowl")
+      );
+    case "arcade":
+      return (
+        tagsLower.some((t) =>
+          [
+            "arcade",
+            "retro",
+            "classic",
+            "runner",
+            "platformer",
+            "skill",
+            "speedrun",
+            "parkour",
+            "jumper"
+          ].includes(t)
+        ) ||
+        nameLower.includes("jump") ||
+        nameLower.includes("bird") ||
+        nameLower.includes("run") ||
+        nameLower.includes("ovo") ||
+        nameLower.includes("hook")
+      );
+    case "puzzle":
+      return (
+        tagsLower.some((t) =>
+          [
+            "puzzle",
+            "logic",
+            "quiz",
+            "trivia",
+            "brain",
+            "challenge",
+            "escape",
+            "strategy",
+            "tower defense",
+            "math"
+          ].includes(t)
+        ) ||
+        nameLower.includes("quiz") ||
+        nameLower.includes("portal") ||
+        nameLower.includes("school") ||
+        nameLower.includes("bloxorz") ||
+        nameLower.includes("2048") ||
+        nameLower.includes("bloons")
+      );
+    case "casual":
+      return (
+        tagsLower.some((t) =>
+          [
+            "casual",
+            "idle",
+            "clicker",
+            "simulation",
+            "cooking",
+            "rpg",
+            "pets",
+            "training",
+            "management",
+            "fishing"
+          ].includes(t)
+        ) ||
+        nameLower.includes("cookie") ||
+        nameLower.includes("fishing") ||
+        nameLower.includes("papa") ||
+        nameLower.includes("duck") ||
+        nameLower.includes("bitlife")
+      );
+    default:
+      return true;
+  }
+}
 
 function GameCard({
   game,
@@ -422,6 +706,7 @@ function GameCard({
 export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [searchQuery, setSearchQuery] = React.useState(initialSearchQuery);
+  const [selectedCategory, setSelectedCategory] = React.useState<CategoryId>(initialCategory);
   const [popularGameId, setPopularGameId] = React.useState<string | null>(null);
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
@@ -454,7 +739,7 @@ export function GameCatalog() {
             name: g.name || "Game",
             url: g.url || "#",
             description: g.description || `${g.name} game from games catalog.`,
-            tags: ["Catalog", "Web"],
+            tags: g.category ? [g.category.toUpperCase(), "Web"] : ["Catalog", "Web"],
             disabled: !!g.disabled
           }));
 
@@ -500,15 +785,22 @@ export function GameCatalog() {
       .catch(() => {});
   };
 
-  // Keep the search in the URL so a filtered list can be reloaded or shared.
+  // Keep search and category filter in the URL so filtered views can be shared or bookmarked.
   React.useEffect(() => {
     const url = new URL(window.location.href);
     if (searchQuery.trim()) url.searchParams.set(SEARCH_PARAM, searchQuery);
     else url.searchParams.delete(SEARCH_PARAM);
-    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  }, [searchQuery]);
 
-  // "/" jumps to search from anywhere on the page, the usual shortcut in game and doc libraries.
+    if (selectedCategory && selectedCategory !== "all") {
+      url.searchParams.set(CATEGORY_PARAM, selectedCategory);
+    } else {
+      url.searchParams.delete(CATEGORY_PARAM);
+    }
+
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [searchQuery, selectedCategory]);
+
+  // "/" jumps to search from anywhere on the page, the usual shortcut in game libraries.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
@@ -529,15 +821,19 @@ export function GameCatalog() {
   }, []);
 
   const filteredGames = React.useMemo(() => {
-    if (!searchQuery.trim()) return games;
+    let list = games;
+    if (selectedCategory !== "all") {
+      list = list.filter((game) => matchesCategory(game, selectedCategory));
+    }
+    if (!searchQuery.trim()) return list;
     const q = searchQuery.trim().toLowerCase();
-    return games.filter(
+    return list.filter(
       (game) =>
         game.name.toLowerCase().includes(q) ||
         game.description.toLowerCase().includes(q) ||
         game.tags.some((tag) => tag.toLowerCase().includes(q))
     );
-  }, [games, searchQuery]);
+  }, [games, selectedCategory, searchQuery]);
 
   const playableGames = React.useMemo(
     () => filteredGames.filter((game) => !game.disabled),
@@ -553,12 +849,19 @@ export function GameCatalog() {
     searchRef.current?.focus();
   }, []);
 
+  const resetAllFilters = React.useCallback(() => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    searchRef.current?.focus();
+  }, []);
+
   const searching = searchQuery.trim().length > 0;
+  const isFiltered = searching || selectedCategory !== "all";
 
   return (
     <div className="solid-3d-panel flex min-h-0 flex-1 flex-col overflow-hidden">
-      {/* Catalog top controls */}
-      <div className="flex shrink-0 flex-col gap-3 border-b border-white/[0.06] p-3 sm:p-4">
+      {/* Catalog top controls with search and category filters */}
+      <div className="flex shrink-0 flex-col gap-2.5 border-b border-white/[0.06] p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-sm font-semibold tracking-tight text-zinc-100">Games</h2>
@@ -622,6 +925,39 @@ export function GameCatalog() {
             )}
           </div>
         </div>
+
+        {/* Category Filter Chips Bar near search */}
+        <div
+          role="tablist"
+          aria-label="Filter games by category"
+          className="flex items-center gap-1.5 overflow-x-auto pt-0.5 pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {CATEGORY_FILTERS.map((cat) => {
+            const active = selectedCategory === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setSelectedCategory(cat.id)}
+                style={{
+                  ...CHIP_STYLE,
+                  borderRadius: 20,
+                  background: active ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
+                  color: active ? "#09090b" : "#d4d4d8",
+                  fontWeight: active ? 600 : 500,
+                  boxShadow: active
+                    ? "0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4)"
+                    : "inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
+                }}
+                className="inline-flex shrink-0 items-center gap-1 px-3 py-1 text-[11px] transition-all hover:text-white active:scale-95"
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Game list */}
@@ -659,7 +995,7 @@ export function GameCatalog() {
             <section aria-labelledby="catalog-play-heading" className="flex flex-col gap-3">
               <div className="flex items-center gap-2">
                 <h3 id="catalog-play-heading" className="text-[11px] font-medium text-zinc-400">
-                  {searching ? "Matches" : "Play now"}
+                  {isFiltered ? "Filtered matches" : "Play now"}
                 </h3>
                 <span aria-hidden="true" className="h-px flex-1 bg-white/[0.07]" />
                 <span className="text-[11px] tabular-nums text-zinc-500">{playableGames.length}</span>
@@ -701,18 +1037,20 @@ export function GameCatalog() {
             <div className="flex flex-col items-center gap-2 py-12 text-center">
               <Gamepad2 className="h-8 w-8 text-zinc-600" aria-hidden="true" />
               <p className="text-sm font-medium text-zinc-300">
-                No games match “{searchQuery.trim()}”
+                No games match your filters
               </p>
               <p className="max-w-[16rem] text-xs leading-relaxed text-zinc-500">
-                Try a title like “Block” or a tag like “Puzzle”.
+                {searchQuery
+                  ? `No games found for "${searchQuery}" in ${selectedCategory}.`
+                  : "No games found in this category."}
               </p>
               <button
                 type="button"
-                onClick={clearSearch}
+                onClick={resetAllFilters}
                 className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-zinc-100"
               >
                 <RotateCcw className="h-3 w-3" aria-hidden="true" />
-                Clear search
+                Reset filters
               </button>
             </div>
           )}

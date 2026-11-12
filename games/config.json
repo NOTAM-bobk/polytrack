@@ -12,21 +12,21 @@
       "name": "Impossible Quiz",
       "url": "/games/the-impossible-quiz.html",
       "description": "110 questions. Surely you can get through them all.",
-      "category": "fun"
+      "category": "puzzle"
     },
     {
       "subdomain": "run3",
       "name": "Run 3",
       "url": "/games/clrun3.html",
       "description": "Jump around space and explore cosmic tunnels.",
-      "category": "fun"
+      "category": "arcade"
     },
     {
       "subdomain": "awsome-tanks",
       "name": "Awsome Tanks",
       "url": "/games/awsome-tanks.html",
       "description": "Use a tank, upgrade weapons, and destroy enemy bases.",
-      "category": "tank"
+      "category": "action"
     },
     {
       "subdomain": "brawl-sim-3d",
@@ -36,11 +36,165 @@
       "category": "action"
     },
     {
+      "subdomain": "retro-bowl",
+      "name": "Retro Bowl",
+      "url": "/games/retro-bowl.html",
+      "description": "Call plays on offense, manage your roster, and win the championship in this retro football sim.",
+      "category": "sports"
+    },
+    {
+      "subdomain": "drive-mad",
+      "name": "Drive Mad",
+      "url": "/games/drive-mad.html",
+      "description": "Navigate wild 3D obstacle courses balancing throttle, stunts, and vehicle physics.",
+      "category": "driving"
+    },
+    {
+      "subdomain": "moto-x3m",
+      "name": "Moto X3M",
+      "url": "/games/moto-x3m.html",
+      "description": "Race your motorbike through hazardous stunt tracks, loops, and explosive obstacles.",
+      "category": "driving"
+    },
+    {
+      "subdomain": "drift-boss",
+      "name": "Drift Boss",
+      "url": "/games/drift-boss.html",
+      "description": "Time one-touch drifts around hairpin corners along narrow sky-high roadways.",
+      "category": "driving"
+    },
+    {
+      "subdomain": "tunnel-rush",
+      "name": "Tunnel Rush",
+      "url": "/games/tunnel-rush.html",
+      "description": "Blaze down spinning 3D neon tunnels dodging high-speed barriers in this reflex test.",
+      "category": "action"
+    },
+    {
+      "subdomain": "ovo",
+      "name": "OvO",
+      "url": "/games/ovo.html",
+      "description": "Fast-paced parkour speedrunning platformer: slide, dive, and wall-jump through puzzle stages.",
+      "category": "arcade"
+    },
+    {
+      "subdomain": "stickman-hook",
+      "name": "Stickman Hook",
+      "url": "/games/stickman-hook.html",
+      "description": "Grapple, swing, and bounce across acrobatic levels with physics-based momentum.",
+      "category": "arcade"
+    },
+    {
+      "subdomain": "doodle-jump",
+      "name": "Doodle Jump",
+      "url": "/games/doodle-jump.html",
+      "description": "Jump up floating platforms, dodge monsters, and aim for high scores in the classic jumper.",
+      "category": "arcade"
+    },
+    {
+      "subdomain": "flappy-bird",
+      "name": "Flappy Bird",
+      "url": "/games/flappy-bird.html",
+      "description": "Tap to flap and guide your bird through green pipes in the notoriously challenging arcade hit.",
+      "category": "arcade"
+    },
+    {
+      "subdomain": "crossy-road",
+      "name": "Crossy Road",
+      "url": "/games/crossy-road.html",
+      "description": "Hop across busy highways, train tracks, and roaring rivers without getting squashed.",
+      "category": "arcade"
+    },
+    {
+      "subdomain": "tiny-fishing",
+      "name": "Tiny Fishing",
+      "url": "/games/tiny-fishing.html",
+      "description": "Cast your hook deep into the lake, catch rare fish, and upgrade your gear for bigger catches.",
+      "category": "casual"
+    },
+    {
+      "subdomain": "cookie",
+      "name": "Cookie Clicker",
+      "url": "/games/cookie-clicker.html",
+      "description": "Bake cookies, hire grandmas, and build an astronomical cookie empire.",
+      "category": "casual"
+    },
+    {
+      "subdomain": "2048",
+      "name": "2048",
+      "url": "/games/2048.html",
+      "description": "Slide and combine matching numbered tiles to reach the 2048 tile.",
+      "category": "puzzle"
+    },
+    {
+      "subdomain": "super-smash-flash",
+      "name": "Super Smash Flash",
+      "url": "/games/super-smash-flash.html",
+      "description": "Brawl as legendary fighters like Mario, Sonic, Goku, Link, and Mega Man in this iconic crossover.",
+      "category": "action"
+    },
+    {
+      "subdomain": "super-mario-63",
+      "name": "Super Mario 63",
+      "url": "/games/super-mario-63.html",
+      "description": "Masterpiece Flash adventure inspired by Super Mario 64 and Sunshine with the FLUDD jetpack.",
+      "category": "adventure"
+    },
+    {
+      "subdomain": "fancy-pants-adventures",
+      "name": "Fancy Pants Adventures",
+      "url": "/games/fancy-pants-adventures.html",
+      "description": "Sprint, slide, and flip through hand-drawn world stages with smooth parkour physics.",
+      "category": "adventure"
+    },
+    {
+      "subdomain": "dad-n-me",
+      "name": "Dad 'n Me",
+      "url": "/games/dad-n-me.html",
+      "description": "Classic brawler by Dan Paladin and Tom Fulp across the playground neighborhood.",
+      "category": "action"
+    },
+    {
+      "subdomain": "portal-flash",
+      "name": "Portal: The Flash Version",
+      "url": "/games/portal-flash.html",
+      "description": "40 mind-bending test chambers with aperture physics, lasers, and dual portal guns.",
+      "category": "puzzle"
+    },
+    {
+      "subdomain": "henry-stickmin-prison",
+      "name": "Henry Stickmin: Escaping the Prison",
+      "url": "/games/henry-stickmin-escaping-the-prison.html",
+      "description": "Help Henry bust out of prison with crazy gadgets, stealth, and hilarious fail scenes.",
+      "category": "adventure"
+    },
+    {
+      "subdomain": "henry-stickmin",
+      "name": "Henry Stickmin: Breaking the Bank",
+      "url": "/games/henry-stickmin-breaking-the-bank.html",
+      "description": "Choose wild and hilarious methods to break into the bank vault with Henry.",
+      "category": "adventure"
+    },
+    {
+      "subdomain": "stick-rpg",
+      "name": "Stick RPG",
+      "url": "/games/stick-rpg.html",
+      "description": "Live a stickman's life: work corporate jobs, study, skateboard, and build wealth in Stick City.",
+      "category": "casual"
+    },
+    {
       "subdomain": "bloons-td4",
       "name": "Bloons Tower Defense 4",
       "url": "/games/bloons-td4.html",
       "description": "Place dart monkeys, tack shooters, and super monkeys to pop incoming bloon waves.",
       "category": "strategy"
+    },
+    {
+      "subdomain": "bloons-super-monkey",
+      "name": "Bloons Super Monkey",
+      "url": "/games/bloons-super-monkey.html",
+      "description": "Take to the skies as Super Monkey and blast thousands of bloons with laser and plasma beams.",
+      "category": "action"
     },
     {
       "subdomain": "worlds-hardest-game",
@@ -61,7 +215,7 @@
       "name": "Papa's Pizzeria",
       "url": "/games/papas-pizzeria.html",
       "description": "Run Papa Louie's pizzeria: take orders, top pizzas, bake to perfection, and cut slices.",
-      "category": "cooking"
+      "category": "casual"
     },
     {
       "subdomain": "bloxorz",
@@ -78,17 +232,17 @@
       "category": "strategy"
     },
     {
-      "subdomain": "henry-stickmin",
-      "name": "Henry Stickmin: Breaking the Bank",
-      "url": "/games/henry-stickmin-breaking-the-bank.html",
-      "description": "Choose wild and hilarious methods to break into the bank vault with Henry.",
-      "category": "adventure"
-    },
-    {
       "subdomain": "duck-life",
       "name": "Duck Life",
       "url": "/games/duck-life.html",
       "description": "Train your duck in running, swimming, and flying to win races and save the farm.",
+      "category": "casual"
+    },
+    {
+      "subdomain": "duck-life-2",
+      "name": "Duck Life 2: World Champion",
+      "url": "/games/duck-life-2.html",
+      "description": "Train your champion duck in running, flying, swimming, and climbing to win world trophies.",
       "category": "casual"
     },
     {
@@ -99,52 +253,11 @@
       "category": "puzzle"
     },
     {
-      "subdomain": "cookie",
-      "name": "Cookie Clicker",
-      "url": "https://cookie.benlaunches.icu/"
-    },
-    {
-      "subdomain": "2048",
-      "name": "2048",
-      "url": "https://2048.benlaunches.icu/",
+      "subdomain": "riddle-school-3",
+      "name": "Riddle School 3",
+      "url": "/games/riddle-school-3.html",
+      "description": "Phil's third school escape with fun puzzles, clever inventory tricks, and snappy humor.",
       "category": "puzzle"
-    },
-    {
-      "subdomain": "ducklings",
-      "name": "Ducklings",
-      "url": "https://ducklings.io/",
-      "disabled": true
-    },
-    {
-      "subdomain": "moto-x3m",
-      "name": "Moto X3M",
-      "url": "https://poki.com/en/g/moto-x3m",
-      "disabled": true
-    },
-    {
-      "subdomain": "snake",
-      "name": "Snake",
-      "url": "https://snakegame.org/",
-      "disabled": true
-    },
-    {
-      "subdomain": "monster-track",
-      "name": "Monster Track",
-      "url": "https://monster.benlaunches.icu/",
-      "disabled": true
-    },
-    {
-      "subdomain": "block-blast",
-      "name": "Block Blast",
-      "url": "/games/block-blast.html",
-      "disabled": true
-    },
-    {
-      "subdomain": "eaglercraft",
-      "name": "Eaglercraft",
-      "url": "https://eaglercraft.com/",
-      "description": "Browser-based Minecraft with survival and multiplayer.",
-      "disabled": true
     }
   ]
 }
