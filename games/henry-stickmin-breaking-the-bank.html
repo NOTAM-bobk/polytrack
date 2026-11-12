@@ -160,7 +160,22 @@
       }
     });
 
-    const CDNS = [
+    window.RufflePlayer = window.RufflePlayer || {};
+    window.RufflePlayer.config = {
+      letterbox: "on",
+      autoplay: "on",
+      unmuteOverlay: "visible",
+      splashScreen: false
+    };
+
+    // Candidate sources in order:
+    // 1. Same-origin local static bundle (completely self-hosted on your site, unblockable on school WiFi)
+    // 2. Same-origin Vercel proxy rewrite (/api/proxy/ruffle/ruffle.js)
+    // 3. unpkg CDN
+    // 4. jsdelivr CDN
+    const RUFFLE_SOURCES = [
+      "/games/ruffle/ruffle.js",
+      "/api/proxy/ruffle/ruffle.js",
       "https://unpkg.com/@ruffle-rs/ruffle",
       "https://cdn.jsdelivr.net/npm/@ruffle-rs/ruffle"
     ];
@@ -170,26 +185,26 @@
         const s = document.createElement("script");
         s.src = src;
         s.async = true;
-        s.onload = resolve;
-        s.onerror = reject;
+        s.onload = () => resolve();
+        s.onerror = (e) => reject(e);
         document.head.appendChild(s);
       });
     }
 
     async function startRuffle() {
       const statusText = document.getElementById("status-text");
-      if (!window.RufflePlayer) {
+      if (!window.RufflePlayer || typeof window.RufflePlayer.newest !== "function") {
         let loaded = false;
-        for (const cdn of CDNS) {
+        for (const src of RUFFLE_SOURCES) {
           try {
-            statusText.textContent = "Loading Flash player...";
-            await loadScript(cdn);
-            if (window.RufflePlayer) {
+            statusText.textContent = "Loading Flash player emulator...";
+            await loadScript(src);
+            if (window.RufflePlayer && typeof window.RufflePlayer.newest === "function") {
               loaded = true;
               break;
             }
           } catch (e) {
-            console.warn("Failed loading Ruffle from", cdn, e);
+            console.warn("Failed loading Ruffle from", src, e);
           }
         }
         if (!loaded) {
@@ -199,23 +214,24 @@
       }
 
       statusText.textContent = "Starting game...";
-      const ruffle = window.RufflePlayer.newest();
-      const player = ruffle.createPlayer();
-      player.id = "flash-player";
-      const container = document.getElementById("game-container");
-      container.appendChild(player);
+      try {
+        const ruffle = window.RufflePlayer.newest();
+        const player = ruffle.createPlayer();
+        player.id = "flash-player";
+        const container = document.getElementById("game-container");
+        container.appendChild(player);
 
-      player.load({
-        url: "/games/swf/henry-stickmin-breaking-the-bank.swf",
-        letterbox: "on",
-        autoplay: "on"
-      }).then(() => {
+        await player.load({
+          url: "/games/swf/henry-stickmin-breaking-the-bank.swf",
+          letterbox: "on",
+          autoplay: "on"
+        });
         const loader = document.getElementById("loader");
         if (loader) loader.style.display = "none";
-      }).catch((err) => {
+      } catch (err) {
         console.error("Game load error:", err);
         statusText.textContent = "Error loading game file.";
-      });
+      }
     }
 
     startRuffle();

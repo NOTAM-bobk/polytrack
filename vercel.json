@@ -21,6 +21,10 @@
     {
       "source": "/api/hub/:path*",
       "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/:path*"
+    },
+    {
+      "source": "/api/proxy/ruffle/:path*",
+      "destination": "https://unpkg.com/@ruffle-rs/ruffle@0.7.1/:path*"
     }
   ]
 }
