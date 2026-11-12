@@ -105,6 +105,52 @@
         scrollbar-width: none;
       }
 
+      /* One focus treatment for the whole hub, so keyboard users can always see where they are.
+         The stretched card link below replaces its own ring with a ring around the whole card. */
+      :where(a, button, input, textarea, select, [role="switch"], [role="radio"]):not(.game-card-link):focus-visible {
+        outline: 2px solid rgba(250, 250, 250, 0.92) !important;
+        outline-offset: 2px !important;
+      }
+
+      /* The card title is the only link in a game card, and its pseudo-element covers the card:
+         the whole card is one large hit target without nesting a link in a link. */
+      .game-card-link::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+      }
+
+      .game-card-link:focus-visible {
+        outline: none !important;
+      }
+
+      .game-card:has(.game-card-link:focus-visible) {
+        outline: 2px solid rgba(250, 250, 250, 0.92);
+        outline-offset: 2px;
+      }
+
+      .game-card:has(.game-card-link:focus-visible) .game-card-link {
+        color: #ffffff;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      /* Interactive text and controls shouldn't wait 300ms for a double-tap on touch screens. */
+      a, button, input, textarea, select, [role="switch"] {
+        touch-action: manipulation;
+      }
+
+      body {
+        -webkit-tap-highlight-color: rgba(255, 255, 255, 0.08);
+      }
+
+      @media (pointer: fine) {
+        html {
+          overscroll-behavior: none;
+        }
+      }
+
       .game-card:hover {
         transform: perspective(1000px) translateY(-3px) translateZ(6px);
         box-shadow:
@@ -142,6 +188,7 @@
       @media (prefers-reduced-motion: reduce) {
         .game-card { transition: none; }
         .game-card:hover { transform: none; }
+        .animate-spin, .animate-pulse, .animate-bounce { animation: none; }
       }
 
       /* Clean subtle scrollbars */

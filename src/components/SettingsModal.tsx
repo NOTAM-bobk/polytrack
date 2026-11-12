@@ -1,5 +1,5 @@
 import * as React from "react";
-import { X, Lock, ShieldAlert, Check, Key, ShieldCheck } from "lucide-react";
+import { X, Lock, ShieldAlert, Check, Key, ShieldCheck, Eye, EyeOff } from "lucide-react";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -15,11 +15,22 @@ const PANIC_PRESETS = [
   { name: "Canvas", url: "https://canvas.instructure.com/" }
 ];
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])';
+
 const CHIP_STYLE: React.CSSProperties = {
   borderRadius: 36,
   background: "rgba(255, 255, 255, 0.04)",
   boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
 };
+
+function hostOf(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "the set page";
+  }
+}
 
 export function SettingsModal({
   isOpen,
@@ -34,6 +45,7 @@ export function SettingsModal({
   const [passwordInput, setPasswordInput] = React.useState(() => {
     return localStorage.getItem("polytrack_site_lock_password") || "";
   });
+  const [showPassword, setShowPassword] = React.useState(false);
   const [lockSaved, setLockSaved] = React.useState(false);
   const [lockError, setLockError] = React.useState("");
 
@@ -44,17 +56,46 @@ export function SettingsModal({
   const [customPanicInput, setCustomPanicInput] = React.useState(panicUrl);
   const [panicSaved, setPanicSaved] = React.useState(false);
 
-  // Close on Escape
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  // Dialog behaviour: move focus in, keep it inside, close on Escape, hand focus back on close.
   React.useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    panelRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
         onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+
+      const items = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
+      ).filter((element) => element.getClientRects().length > 0);
+      if (items.length === 0) return;
+
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && (active === first || active === panelRef.current)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    document.addEventListener("keydown", handleKeyDown, true);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+      previouslyFocused?.focus?.();
+    };
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
@@ -62,7 +103,7 @@ export function SettingsModal({
   const handleSaveLock = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (siteLockEnabled && !passwordInput.trim()) {
-      setLockError("Please enter a password before enabling site lock.");
+      setLockError("Enter a password before turning on Site Lock.");
       return;
     }
     setLockError("");
@@ -80,7 +121,7 @@ export function SettingsModal({
     setSiteLockEnabled(next);
     localStorage.setItem("polytrack_site_lock_enabled", next ? "true" : "false");
     if (next && !passwordInput.trim()) {
-      setLockError("Set a password below to activate site lock.");
+      setLockError("Set a password below to activate Site Lock.");
     } else {
       setLockError("");
     }
@@ -105,11 +146,18 @@ export function SettingsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/80 p-3 backdrop-blur-sm sm:p-4"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
-        className="w-full max-w-lg p-5 sm:p-6 text-zinc-100 flex flex-col gap-5 relative my-auto animate-in fade-in zoom-in-95 duration-150"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+        tabIndex={-1}
+        className="relative my-auto flex w-full max-w-lg flex-col gap-5 p-5 text-zinc-100 focus:outline-none sm:p-6"
         style={{
           background: "#1d1d1d",
           borderRadius: 20,
@@ -118,15 +166,16 @@ export function SettingsModal({
             "inset 0 0 0 1px rgba(44, 47, 54, 0.65), inset 0 0 50px 0 rgba(255, 255, 255, 0.02), 0 24px 60px -12px rgba(0, 0, 0, 0.9), 0 6px 16px rgba(0, 0, 0, 0.6)",
           fontFamily: "system-ui, -apple-system, sans-serif",
         }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Settings</h2>
+            <h2 id="settings-title" className="text-base font-semibold tracking-tight text-zinc-100">
+              Settings
+            </h2>
             <span
               style={CHIP_STYLE}
-              className="px-2.5 py-0.5 text-[11px] font-mono text-[#caccd2]"
+              className="px-2.5 py-0.5 font-mono text-[11px] text-[#caccd2]"
             >
               Preferences
             </span>
@@ -134,10 +183,10 @@ export function SettingsModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            className="cursor-pointer rounded-lg p-1 text-zinc-400 transition-colors hover:bg-white/[0.08] hover:text-white"
             aria-label="Close settings"
           >
-            <X className="w-4 h-4" />
+            <X aria-hidden="true" className="w-4 h-4" />
           </button>
         </div>
 
@@ -153,13 +202,16 @@ export function SettingsModal({
                 }}
                 className="p-1.5 text-zinc-300"
               >
-                <Lock className={`w-4 h-4 ${siteLockEnabled ? "text-emerald-400" : "text-zinc-400"}`} />
+                <Lock
+                  aria-hidden="true"
+                  className={`w-4 h-4 ${siteLockEnabled ? "text-emerald-400" : "text-zinc-400"}`}
+                />
               </div>
               <div>
-                <div className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-100">
                   <span>Site Lock (Classroom Mode)</span>
                   {siteLockEnabled && (
-                    <span className="text-[10px] font-medium px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
                       Active
                     </span>
                   )}
@@ -173,14 +225,15 @@ export function SettingsModal({
             <button
               type="button"
               onClick={handleToggleLock}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
                 siteLockEnabled ? "bg-emerald-600" : "bg-zinc-700"
               }`}
               role="switch"
               aria-checked={siteLockEnabled}
+              aria-label="Site Lock"
             >
               <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-in-out ${
                   siteLockEnabled ? "translate-x-5" : "translate-x-0"
                 }`}
               />
@@ -196,65 +249,99 @@ export function SettingsModal({
             }}
             className="flex flex-col gap-3"
           >
-            <form onSubmit={handleSaveLock} className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1">
-                <Key className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
-                <input
-                  type="text"
-                  value={passwordInput}
-                  onChange={(e) => {
-                    setPasswordInput(e.target.value);
-                    if (lockError) setLockError("");
-                  }}
-                  placeholder="Set classroom password..."
-                  style={{
-                    borderRadius: 10,
-                    background: "rgba(255, 255, 255, 0.04)",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.06)",
-                  }}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 font-mono"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-950 bg-white hover:bg-zinc-100 active:scale-95 transition-all cursor-pointer whitespace-nowrap shadow-sm"
-                >
-                  {lockSaved ? <Check className="w-3.5 h-3.5 text-emerald-700" /> : <ShieldCheck className="w-3.5 h-3.5 text-zinc-900" />}
-                  <span>{lockSaved ? "Saved" : "Save Password"}</span>
-                </button>
-
-                {siteLockEnabled && passwordInput.trim() && (
+            <form onSubmit={handleSaveLock} className="flex flex-col gap-2">
+              <label
+                htmlFor="site-lock-password"
+                className="text-[11px] font-medium text-zinc-400"
+              >
+                Classroom password
+              </label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="relative flex-1">
+                  <Key
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-500"
+                  />
+                  <input
+                    id="site-lock-password"
+                    type={showPassword ? "text" : "password"}
+                    value={passwordInput}
+                    onChange={(e) => {
+                      setPasswordInput(e.target.value);
+                      if (lockError) setLockError("");
+                    }}
+                    placeholder="Set classroom password…"
+                    autoComplete="new-password"
+                    spellCheck={false}
+                    aria-invalid={lockError ? true : undefined}
+                    aria-describedby="site-lock-hint"
+                    style={{
+                      borderRadius: 10,
+                      background: "rgba(255, 255, 255, 0.04)",
+                      boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.06)",
+                    }}
+                    className="w-full py-1.5 pl-9 pr-9 font-mono text-xs text-zinc-100 transition-colors placeholder:text-zinc-500 focus:outline-none"
+                  />
                   <button
                     type="button"
-                    onClick={() => {
-                      onClose();
-                      onLockNow();
-                    }}
-                    style={CHIP_STYLE}
-                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-300 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer whitespace-nowrap active:scale-95"
-                    title="Lock the site immediately to test the password screen"
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer rounded p-0.5 text-zinc-500 transition-colors hover:text-zinc-300"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    <Lock className="w-3 h-3" />
-                    <span>Lock Now</span>
+                    {showPassword ? (
+                      <EyeOff aria-hidden="true" className="w-3.5 h-3.5" />
+                    ) : (
+                      <Eye aria-hidden="true" className="w-3.5 h-3.5" />
+                    )}
                   </button>
-                )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    className="inline-flex cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-zinc-100 active:scale-95"
+                  >
+                    {lockSaved ? (
+                      <Check aria-hidden="true" className="w-3.5 h-3.5 text-emerald-700" />
+                    ) : (
+                      <ShieldCheck aria-hidden="true" className="w-3.5 h-3.5 text-zinc-900" />
+                    )}
+                    <span>{lockSaved ? "Saved" : "Save Password"}</span>
+                  </button>
+
+                  {siteLockEnabled && passwordInput.trim() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onLockNow();
+                      }}
+                      style={CHIP_STYLE}
+                      className="inline-flex cursor-pointer items-center justify-center gap-1 whitespace-nowrap px-3 py-1.5 text-xs font-medium text-amber-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-95"
+                      title="Lock the site now to test the password screen"
+                    >
+                      <Lock aria-hidden="true" className="w-3 h-3" />
+                      <span>Lock Now</span>
+                    </button>
+                  )}
+                </div>
               </div>
+
+              {lockError && (
+                <p role="alert" className="text-xs font-medium text-red-400">
+                  {lockError}
+                </p>
+              )}
+
+              <p id="site-lock-hint" className="text-[11px] leading-normal text-zinc-500">
+                When enabled, opening or refreshing the site shows a class password screen first.
+              </p>
             </form>
-
-            {lockError && (
-              <div className="text-red-400 text-xs font-medium">{lockError}</div>
-            )}
-
-            <p className="text-[11px] text-zinc-500 leading-normal">
-              When enabled, anyone opening or refreshing the site will see a black disguise screen prompting to "Put in password to access your class".
-            </p>
           </div>
         </div>
 
         {/* Section 2: Emergency Panic Redirect */}
-        <div className="flex flex-col gap-3 pt-3 border-t border-white/[0.08]">
+        <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-3">
           <div className="flex items-center gap-2">
             <div
               style={{
@@ -264,17 +351,17 @@ export function SettingsModal({
               }}
               className="p-1.5 text-red-400"
             >
-              <ShieldAlert className="w-4 h-4" />
+              <ShieldAlert aria-hidden="true" className="w-4 h-4" />
             </div>
-            <div>
-              <div className="text-sm font-semibold text-zinc-100 flex items-center gap-2">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2 text-sm font-semibold text-zinc-100">
                 <span>Emergency Panic Redirect</span>
-                <kbd className="px-1.5 py-0.2 rounded bg-zinc-800 text-[10px] font-mono text-zinc-300 border border-zinc-700">
+                <kbd className="rounded border border-zinc-700 bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-300">
                   ]
                 </kbd>
               </div>
-              <div className="text-xs text-zinc-400">
-                Press the bracket key <code className="text-zinc-300">]</code> anywhere to instantly escape
+              <div className="truncate text-xs text-zinc-400">
+                Press <span className="text-zinc-300">]</span> anywhere to leave this site
               </div>
             </div>
           </div>
@@ -288,43 +375,62 @@ export function SettingsModal({
             }}
             className="flex flex-col gap-2.5"
           >
-            <div className="text-[11px] font-medium text-zinc-400">Redirect presets:</div>
-            <div className="grid grid-cols-2 gap-1.5">
-              {PANIC_PRESETS.map((preset) => (
-                <button
-                  key={preset.name}
-                  type="button"
-                  onClick={() => handleSavePanicUrl(preset.url)}
-                  style={CHIP_STYLE}
-                  className={`flex items-center justify-between px-3 py-1.5 text-xs transition-colors cursor-pointer ${
-                    panicUrl === preset.url
-                      ? "text-white font-semibold bg-white/[0.12]"
-                      : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.06]"
-                  }`}
-                >
-                  <span className="truncate">{preset.name}</span>
-                  {panicUrl === preset.url && <Check className="w-3 h-3 text-emerald-400 shrink-0 ml-1" />}
-                </button>
-              ))}
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[11px] font-medium text-zinc-400">Redirect presets</div>
+              <div className="truncate text-[11px] text-zinc-500" title={panicUrl}>
+                Panic opens {hostOf(panicUrl)}
+              </div>
             </div>
 
-            <div className="pt-2 border-t border-white/[0.06] flex gap-2">
+            <div role="group" aria-label="Redirect presets" className="grid grid-cols-2 gap-1.5">
+              {PANIC_PRESETS.map((preset) => {
+                const selected = panicUrl === preset.url;
+                return (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => handleSavePanicUrl(preset.url)}
+                    aria-pressed={selected}
+                    style={CHIP_STYLE}
+                    className={`flex cursor-pointer items-center justify-between px-3 py-1.5 text-xs transition-colors ${
+                      selected
+                        ? "bg-white/[0.12] font-semibold text-white"
+                        : "text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-200"
+                    }`}
+                  >
+                    <span className="truncate">{preset.name}</span>
+                    {selected && (
+                      <Check aria-hidden="true" className="ml-1 w-3 h-3 shrink-0 text-emerald-400" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-2 border-t border-white/[0.06] pt-2">
+              <label htmlFor="panic-url" className="sr-only">
+                Custom redirect URL
+              </label>
               <input
-                type="text"
+                id="panic-url"
+                type="url"
+                inputMode="url"
                 value={customPanicInput}
                 onChange={(e) => setCustomPanicInput(e.target.value)}
-                placeholder="https://classroom.google.com..."
+                placeholder="https://classroom.google.com…"
+                autoComplete="off"
+                spellCheck={false}
                 style={{
                   borderRadius: 10,
                   background: "rgba(255, 255, 255, 0.04)",
                   boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.06)",
                 }}
-                className="flex-1 px-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-400 font-mono"
+                className="min-w-0 flex-1 px-3 py-1.5 font-mono text-xs text-zinc-100 transition-colors placeholder:text-zinc-500 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => handleSavePanicUrl(customPanicInput)}
-                className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-xs font-semibold text-zinc-950 bg-white hover:bg-zinc-100 active:scale-95 transition-all cursor-pointer whitespace-nowrap"
+                className="inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-zinc-100 active:scale-95"
               >
                 {panicSaved ? "Saved" : "Set Custom URL"}
               </button>

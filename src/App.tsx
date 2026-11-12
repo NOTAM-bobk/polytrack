@@ -43,10 +43,17 @@ export function App() {
       {isLocked && <SiteLock onUnlock={() => setIsUnlocked(true)} />}
 
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+        <a
+          href="#main"
+          className="sr-only rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-zinc-950 focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50"
+        >
+          Skip to games
+        </a>
+
         {/* 3D Top Navigation Bar */}
         <header className="px-2.5 sm:px-4 pt-2.5 sm:pt-3 shrink-0 z-20">
           <div
-            className="solid-3d-panel w-full px-3 sm:px-4 py-2 flex items-center justify-between gap-2 sm:gap-4"
+            className="solid-3d-panel flex w-full flex-wrap items-center gap-2 px-3 py-2 sm:flex-nowrap sm:gap-4 sm:px-4"
             style={{
               background: "#1d1d1d",
               borderRadius: 20,
@@ -55,73 +62,85 @@ export function App() {
               fontFamily: "system-ui, -apple-system, sans-serif",
             }}
           >
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <a href="/" className="flex items-center gap-2 group shrink-0">
-                <span
-                  style={{
-                    borderRadius: 36,
-                    background: "rgba(255, 255, 255, 0.06)",
-                    boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
-                  }}
-                  className="px-3 py-1 text-xs font-semibold tracking-tight text-zinc-100 group-hover:text-white transition-all whitespace-nowrap"
-                >
-                  "Education" Games
-                </span>
+            <a href="/" className="order-1 flex shrink-0 items-center gap-2 group">
+              <span
+                style={{
+                  borderRadius: 36,
+                  background: "rgba(255, 255, 255, 0.06)",
+                  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)",
+                }}
+                className="px-3 py-1 text-xs font-semibold tracking-tight text-zinc-100 transition-colors group-hover:text-white whitespace-nowrap"
+              >
+                "Education" Games
+              </span>
+            </a>
+
+            <nav
+              aria-label="Site"
+              className="no-scrollbar order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto py-0.5 sm:order-2 sm:w-auto sm:flex-1"
+            >
+              <a
+                href="/submit/"
+                aria-label="Submit a game"
+                style={CHIP_STYLE}
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+              >
+                <Send aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="hidden sm:inline">Submit a game</span>
               </a>
+              <a
+                href="/ai/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open Unblocked AIs in a new tab"
+                aria-label="Unblocked AIs (opens in a new tab)"
+                style={CHIP_STYLE}
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+              >
+                <Sparkles aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="hidden sm:inline">Unblocked AIs</span>
+              </a>
+              <a
+                href="/outside/"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Open outside games in a new tab"
+                aria-label="Outside games (opens in a new tab)"
+                style={CHIP_STYLE}
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+              >
+                <Compass aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="hidden sm:inline">Outside games</span>
+              </a>
+              <ShareButton />
+            </nav>
 
-              <nav className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar">
-                <a
-                  href="/submit/"
-                  style={CHIP_STYLE}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98]"
-                >
-                  <Send className="w-3.5 h-3.5 text-zinc-400" />
-                  <span className="hidden sm:inline">Submit URL</span>
-                </a>
-                <a
-                  href="/ai/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Open Unblocked AIs in a new tab"
-                  style={CHIP_STYLE}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98]"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-zinc-400" />
-                  <span className="hidden sm:inline">Unblocked AIs</span>
-                </a>
-                <a
-                  href="/outside/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="Open outside games in a new tab"
-                  style={CHIP_STYLE}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98]"
-                >
-                  <Compass className="w-3.5 h-3.5 text-zinc-400" />
-                  <span className="hidden sm:inline">Outside games</span>
-                </a>
-                <ShareButton />
-              </nav>
-            </div>
-
-            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:order-3 sm:gap-2">
               <button
                 type="button"
                 onClick={() => setSettingsOpen(true)}
                 title="Settings & Site Lock"
+                aria-label="Settings"
+                aria-haspopup="dialog"
+                aria-expanded={settingsOpen}
                 style={CHIP_STYLE}
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98] cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
               >
-                <Settings className="w-3.5 h-3.5 text-zinc-400" />
+                <Settings aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
                 <span className="hidden md:inline">Settings</span>
               </button>
-              <PanicButton onOpenSettings={() => setSettingsOpen(true)} />
+              <PanicButton />
             </div>
           </div>
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 flex flex-col md:flex-row min-h-0 p-2.5 sm:p-4 gap-3 overflow-y-auto md:overflow-hidden">
+        <main
+          id="main"
+          tabIndex={-1}
+          className="flex-1 flex flex-col md:flex-row min-h-0 p-2.5 sm:p-4 gap-3 overflow-y-auto md:overflow-hidden focus:outline-none"
+        >
+          <h1 className="sr-only">“Education” Games — browser games for a study break</h1>
           <section className="flex-1 flex flex-col min-h-[65vh] md:min-h-0 min-w-0">
             <div id="games" className="flex-1 flex flex-col min-h-0">
               <GameCatalog />
@@ -144,9 +163,15 @@ export function App() {
             <span>Built by SS</span>
           </div>
           <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <a href="mailto:hello@base31.org" className="hover:text-zinc-200 transition-colors">hello@base31.org</a>
-            <a href="/terms" className="hover:text-zinc-200 transition-colors">Terms of Service</a>
-            <a href="/submit/" className="hover:text-zinc-200 transition-colors">Submit a game</a>
+            <a href="mailto:hello@base31.org" className="transition-colors hover:text-zinc-200">
+              hello@base31.org
+            </a>
+            <a href="/terms" className="transition-colors hover:text-zinc-200">
+              Terms of Service
+            </a>
+            <a href="/submit/" className="transition-colors hover:text-zinc-200">
+              Submit a game
+            </a>
           </nav>
         </footer>
       </div>

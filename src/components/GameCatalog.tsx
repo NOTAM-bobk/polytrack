@@ -1,9 +1,10 @@
 import * as React from "react";
-import { Search, Play, Gamepad2 } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X } from "lucide-react";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const MAX_RECENT_GAMES = 6;
+const SEARCH_PARAM = "q";
 
 const CHIP_STYLE: React.CSSProperties = {
   borderRadius: 36,
@@ -31,6 +32,14 @@ function loadRecentGames(): RecentGame[] {
       .slice(0, MAX_RECENT_GAMES);
   } catch {
     return [];
+  }
+}
+
+function initialSearchQuery() {
+  try {
+    return new URLSearchParams(window.location.search).get(SEARCH_PARAM) ?? "";
+  } catch {
+    return "";
   }
 }
 
@@ -202,12 +211,108 @@ export const DEFAULT_GAMES: GameItem[] = [
   }
 ];
 
+function GameCard({
+  game,
+  isRecent,
+  onPlay
+}: {
+  game: GameItem;
+  isRecent: boolean;
+  onPlay: (id: string) => void;
+}) {
+  return (
+    <article
+      key={game.id}
+      className={`game-card group relative flex w-full flex-col overflow-hidden ${
+        game.disabled ? "opacity-80" : ""
+      }`}
+    >
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="mb-2 flex items-start justify-between gap-2">
+          <h4 className="flex min-w-0 items-center gap-2 text-base font-semibold text-zinc-100">
+            {game.disabled ? (
+              <span className="truncate">{game.name}</span>
+            ) : (
+              <a
+                href={game.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onPlay(game.id)}
+                className="game-card-link min-w-0 truncate transition-colors group-hover:text-white"
+              >
+                {game.name}
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            )}
+            {isRecent && (
+              <span
+                title="You played this in the last week"
+                style={CHIP_STYLE}
+                className="shrink-0 px-2 py-0.5 text-[11px] font-medium text-amber-300"
+              >
+                Recent
+              </span>
+            )}
+          </h4>
+          {game.version && (
+            <span
+              style={CHIP_STYLE}
+              className="shrink-0 px-2.5 py-0.5 font-mono text-[11px] text-[#caccd2]"
+            >
+              {game.version}
+            </span>
+          )}
+        </div>
+
+        <p className="mb-4 line-clamp-2 flex-1 text-[13px] leading-[18px] text-[#8B9099]">
+          {game.description}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {game.tags.slice(0, 3).map((tag) => (
+              <span
+                key={tag}
+                style={CHIP_STYLE}
+                className="inline-flex h-6 items-center px-2.5 text-[11px] leading-[14px] text-[#caccd2]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+
+          <div className="shrink-0">
+            {game.disabled ? (
+              <span
+                style={CHIP_STYLE}
+                className="inline-flex h-7 items-center justify-center gap-1.5 px-3 text-xs font-medium text-zinc-400"
+              >
+                <Clock3 className="h-3 w-3" aria-hidden="true" />
+                <span>Coming soon</span>
+              </span>
+            ) : (
+              <span
+                aria-hidden="true"
+                className="inline-flex h-7 items-center justify-center gap-1.5 rounded-full bg-white px-3.5 text-xs font-semibold text-zinc-950 shadow-sm transition-colors group-hover:bg-zinc-100"
+              >
+                <Play className="h-3 w-3 fill-current" />
+                <span>Play</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
-  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchQuery, setSearchQuery] = React.useState(initialSearchQuery);
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
   );
+  const searchRef = React.useRef<HTMLInputElement>(null);
 
   const markGamePlayed = React.useCallback((id: string) => {
     const next = [
@@ -245,64 +350,125 @@ export function GameCatalog() {
       .catch(() => {});
   }, []);
 
+  // Keep the search in the URL so a filtered list can be reloaded or shared.
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    if (searchQuery.trim()) url.searchParams.set(SEARCH_PARAM, searchQuery);
+    else url.searchParams.delete(SEARCH_PARAM);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [searchQuery]);
+
+  // "/" jumps to search from anywhere on the page, the usual shortcut in game and doc libraries.
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      ) {
+        return;
+      }
+      if (document.querySelector('[role="dialog"]')) return;
+      if (!searchRef.current) return;
+      event.preventDefault();
+      searchRef.current.focus();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const filteredGames = React.useMemo(() => {
-    return games.filter((game) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
-      return (
+    if (!searchQuery.trim()) return games;
+    const q = searchQuery.trim().toLowerCase();
+    return games.filter(
+      (game) =>
         game.name.toLowerCase().includes(q) ||
         game.description.toLowerCase().includes(q) ||
-        game.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    });
+        game.tags.some((tag) => tag.toLowerCase().includes(q))
+    );
   }, [games, searchQuery]);
 
+  const playableGames = React.useMemo(
+    () => filteredGames.filter((game) => !game.disabled),
+    [filteredGames]
+  );
+  const comingSoonGames = React.useMemo(
+    () => filteredGames.filter((game) => game.disabled),
+    [filteredGames]
+  );
+
+  const clearSearch = React.useCallback(() => {
+    setSearchQuery("");
+    searchRef.current?.focus();
+  }, []);
+
+  const searching = searchQuery.trim().length > 0;
+
   return (
-    <div
-      className="solid-3d-panel flex-1 flex flex-col min-h-0 overflow-hidden"
-      style={{
-        background: "#1d1d1d",
-        borderRadius: 20,
-        boxShadow:
-          "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 14px 30px -8px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3)",
-        fontFamily: "system-ui, -apple-system, sans-serif",
-      }}
-    >
-      {/* Catalog Top Controls */}
-      <div className="p-3 sm:p-4 border-b border-white/[0.06] flex flex-col gap-3 shrink-0">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-zinc-100 tracking-tight">Games</h2>
+    <div className="solid-3d-panel flex min-h-0 flex-1 flex-col overflow-hidden">
+      {/* Catalog top controls */}
+      <div className="flex shrink-0 flex-col gap-3 border-b border-white/[0.06] p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="text-sm font-semibold tracking-tight text-zinc-100">Games</h2>
             <span
+              role="status"
+              aria-live="polite"
               style={CHIP_STYLE}
-              className="px-2.5 py-0.5 text-[11px] text-[#caccd2]"
+              className="shrink-0 px-2.5 py-0.5 text-[11px] tabular-nums text-[#caccd2]"
             >
-              {filteredGames.length} games
+              {filteredGames.length} {filteredGames.length === 1 ? "game" : "games"}
             </span>
           </div>
 
-          <div className="relative w-full max-w-[240px]">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400" />
+          <div className="relative w-full sm:w-[15rem]">
+            <label htmlFor="game-search" className="sr-only">
+              Search games
+            </label>
+            <Search
+              aria-hidden="true"
+              className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400"
+            />
             <input
-              type="text"
+              id="game-search"
+              ref={searchRef}
+              type="search"
+              name="q"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search games..."
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && searchQuery) {
+                  event.preventDefault();
+                  setSearchQuery("");
+                }
+              }}
+              placeholder="Search games…"
+              autoComplete="off"
+              spellCheck={false}
               style={{
                 ...CHIP_STYLE,
                 borderRadius: 14,
                 background: "rgba(255, 255, 255, 0.03)",
               }}
-              className="w-full pl-8 pr-3 py-1.5 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 transition-colors"
+              className="w-full appearance-none py-1.5 pl-8 pr-12 text-xs text-zinc-100 transition-colors placeholder:text-zinc-500 focus:outline-none [&::-webkit-search-cancel-button]:appearance-none"
             />
-            {searchQuery && (
+            {searching ? (
               <button
-                onClick={() => setSearchQuery("")}
+                type="button"
+                onClick={clearSearch}
                 aria-label="Clear search"
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 text-sm"
+                className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-white/[0.08] hover:text-zinc-100"
               >
-                ×
+                <X className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
+            ) : (
+              <kbd
+                aria-hidden="true"
+                className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 font-mono text-[10px] leading-none text-zinc-500 sm:block"
+              >
+                /
+              </kbd>
             )}
           </div>
         </div>
@@ -310,15 +476,15 @@ export function GameCatalog() {
 
       {/* Game list */}
       <div
-        className="flex-1 overflow-y-auto p-3 sm:p-4 min-h-0"
+        className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4"
         style={{
           background: "rgba(0, 0, 0, 0.18)",
           boxShadow: "inset 0 1px 4px rgba(0, 0, 0, 0.3)",
         }}
       >
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           <div
-            aria-label="Advertisement space"
+            aria-label="Advertisement"
             style={{
               borderRadius: 16,
               background: "rgba(255, 255, 255, 0.02)",
@@ -333,110 +499,72 @@ export function GameCatalog() {
             <a
               href="mailto:hello@base31.org?subject=Ad%20space%20on%20Education%20Games"
               style={CHIP_STYLE}
-              className="shrink-0 inline-flex items-center px-3 py-1 text-[11px] font-medium text-zinc-300 transition-colors hover:text-white"
+              className="inline-flex shrink-0 items-center px-3 py-1 text-[11px] font-medium text-zinc-300 transition-colors hover:text-white"
             >
               Advertise
             </a>
           </div>
-          {filteredGames.map((game) => {
-            const isFeatured = !!game.featured;
-            const isRecent = recentIds.has(game.id);
-            return (
-              <div
-                key={game.id}
-                className={`game-card group relative flex w-full flex-col transition-all duration-200 overflow-hidden ${
-                  game.disabled ? "opacity-75" : ""
-                }`}
-                style={{
-                  background: "#1d1d1d",
-                  borderRadius: 20,
-                  boxShadow:
-                    "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 10px 24px -6px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)",
-                  fontFamily: "system-ui, -apple-system, sans-serif",
-                  willChange: "transform, box-shadow",
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden",
-                }}
-              >
 
-                <div className="p-4 sm:p-5 flex-1 flex flex-col relative z-10">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-base text-zinc-100 group-hover:text-white transition-colors flex items-center gap-2 min-w-0">
-                      <span className="truncate">{game.name}</span>
-                      {isRecent && (
-                        <span
-                          title="You opened this game recently"
-                          style={CHIP_STYLE}
-                          className="shrink-0 px-2 py-0.5 text-[11px] font-medium text-amber-300"
-                        >
-                          Recent
-                        </span>
-                      )}
-                    </h3>
-                    {game.version && (
-                      <span
-                        style={CHIP_STYLE}
-                        className="shrink-0 px-2.5 py-0.5 text-[11px] font-mono text-[#caccd2]"
-                      >
-                        {game.version}
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-[13px] leading-[18px] text-[#8B9099] mb-4 flex-1 line-clamp-2">
-                    {game.description}
-                  </p>
-
-                  <div className="flex items-center justify-between gap-3 pt-3 border-t border-white/[0.06] mt-auto">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {game.tags.slice(0, 3).map((tag) => (
-                        <span
-                          key={tag}
-                          style={CHIP_STYLE}
-                          className="inline-flex items-center h-6 px-2.5 text-[11px] leading-[14px] text-[#caccd2]"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="shrink-0">
-                      {game.disabled ? (
-                        <button
-                          type="button"
-                          disabled
-                          style={CHIP_STYLE}
-                          className="inline-flex items-center justify-center gap-1.5 h-7 px-3 text-xs font-medium text-zinc-500 cursor-not-allowed opacity-60"
-                        >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>Coming soon</span>
-                        </button>
-                      ) : (
-                        <a
-                          href={game.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => markGamePlayed(game.id)}
-                          className="inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full text-xs font-semibold text-zinc-950 bg-white hover:bg-zinc-100 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer"
-                        >
-                          <Play className="w-3 h-3 fill-current" />
-                          <span>Play</span>
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          {playableGames.length > 0 && (
+            <section aria-labelledby="catalog-play-heading" className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <h3 id="catalog-play-heading" className="text-[11px] font-medium text-zinc-400">
+                  {searching ? "Matches" : "Play now"}
+                </h3>
+                <span aria-hidden="true" className="h-px flex-1 bg-white/[0.07]" />
+                <span className="text-[11px] tabular-nums text-zinc-500">{playableGames.length}</span>
               </div>
-            );
-          })}
-        </div>
+              {playableGames.map((game) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  isRecent={recentIds.has(game.id)}
+                  onPlay={markGamePlayed}
+                />
+              ))}
+            </section>
+          )}
 
-        {filteredGames.length === 0 && (
-          <div className="text-center py-12 text-zinc-500">
-            <Gamepad2 className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm font-medium">No games found</p>
-          </div>
-        )}
+          {comingSoonGames.length > 0 && (
+            <section aria-labelledby="catalog-soon-heading" className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <h3 id="catalog-soon-heading" className="text-[11px] font-medium text-zinc-400">
+                  Coming soon
+                </h3>
+                <span aria-hidden="true" className="h-px flex-1 bg-white/[0.07]" />
+                <span className="text-[11px] tabular-nums text-zinc-500">{comingSoonGames.length}</span>
+              </div>
+              {comingSoonGames.map((game) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  isRecent={recentIds.has(game.id)}
+                  onPlay={markGamePlayed}
+                />
+              ))}
+            </section>
+          )}
+
+          {filteredGames.length === 0 && (
+            <div className="flex flex-col items-center gap-2 py-12 text-center">
+              <Gamepad2 className="h-8 w-8 text-zinc-600" aria-hidden="true" />
+              <p className="text-sm font-medium text-zinc-300">
+                No games match “{searchQuery.trim()}”
+              </p>
+              <p className="max-w-[16rem] text-xs leading-relaxed text-zinc-500">
+                Try a title like “Block” or a tag like “Puzzle”.
+              </p>
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-zinc-100"
+              >
+                <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                Clear search
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

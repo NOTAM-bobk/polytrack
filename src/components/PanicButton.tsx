@@ -1,167 +1,58 @@
 import * as React from "react";
-import { ShieldAlert, Settings, Check } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
 
-const PANIC_PRESETS = [
-  { name: "Wikipedia", url: "https://www.wikipedia.org/" },
-  { name: "Google Classroom", url: "https://classroom.google.com/" },
-  { name: "Google Docs", url: "https://docs.google.com/" },
-  { name: "Canvas", url: "https://canvas.instructure.com/" }
-];
+const PANIC_STORAGE_KEY = "polytrack_panic_url";
+const DEFAULT_TARGET = "https://www.wikipedia.org/";
 
-export function PanicButton({
-  className = "",
-  onOpenSettings
-}: {
-  className?: string;
-  onOpenSettings?: () => void;
-}) {
-  const [panicUrl, setPanicUrl] = React.useState(() => {
-    return localStorage.getItem("polytrack_panic_url") || "https://www.wikipedia.org/";
-  });
-  const [showSettings, setShowSettings] = React.useState(false);
-  const [customInput, setCustomInput] = React.useState(panicUrl);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-
+export function PanicButton({ className = "" }: { className?: string }) {
   const triggerPanic = React.useCallback(() => {
-    const target = localStorage.getItem("polytrack_panic_url") || panicUrl;
+    let target = DEFAULT_TARGET;
+    try {
+      target = localStorage.getItem(PANIC_STORAGE_KEY) || DEFAULT_TARGET;
+    } catch {
+      // Storage can be unavailable; the default destination still works.
+    }
     try {
       window.location.replace(target);
     } catch {
-      window.location.href = target;
+      window.location.assign(target);
     }
-  }, [panicUrl]);
+  }, []);
 
-  // Keyboard shortcut listener: ']'
+  // "]" is the only panic shortcut: Escape belongs to closing dialogs, so it must not navigate away.
   React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "]" || event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+      ) {
         return;
       }
-      if (e.key === "]" || (e.key === "Escape" && !document.querySelector(".game-runner-modal"))) {
-        e.preventDefault();
-        triggerPanic();
-      }
+      event.preventDefault();
+      triggerPanic();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [triggerPanic]);
 
-  // Click outside to close local settings dropdown
-  React.useEffect(() => {
-    if (!showSettings) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowSettings(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showSettings]);
-
-  const saveCustomUrl = (url: string) => {
-    let finalUrl = url.trim();
-    if (!finalUrl.startsWith("http://") && !finalUrl.startsWith("https://")) {
-      finalUrl = "https://" + finalUrl;
-    }
-    setPanicUrl(finalUrl);
-    localStorage.setItem("polytrack_panic_url", finalUrl);
-    setShowSettings(false);
-  };
-
-  const handleSettingsClick = () => {
-    if (onOpenSettings) {
-      onOpenSettings();
-    } else {
-      setShowSettings((prev) => !prev);
-    }
-  };
-
   return (
-    <div ref={containerRef} className={`relative inline-flex items-center ${className}`}>
-      <div
-        style={{
-          borderRadius: 12,
-          background: "rgba(255, 255, 255, 0.04)",
-          boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04), inset 0 1px 0 0 rgba(255, 255, 255, 0.06)",
-        }}
-        className="flex items-center gap-1 p-0.5"
+    <button
+      type="button"
+      onClick={triggerPanic}
+      title="Panic: press ] anywhere to leave this site instantly"
+      aria-keyshortcuts="]"
+      className={`inline-flex cursor-pointer items-center gap-1.5 rounded-full bg-red-600/90 px-3 py-1 text-xs font-medium tracking-tight text-white shadow-sm transition-colors hover:bg-red-500 active:scale-[0.98] ${className}`}
+    >
+      <ShieldAlert aria-hidden="true" className="w-3.5 h-3.5" />
+      <span>Panic</span>
+      <kbd
+        aria-hidden="true"
+        className="rounded bg-red-800/70 px-1.5 py-0.5 font-mono text-[10px] leading-none text-red-100"
       >
-        <button
-          type="button"
-          onClick={triggerPanic}
-          title="Panic key: press ']' anywhere to redirect immediately"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-600/90 hover:bg-red-500 text-white font-medium text-xs tracking-tight transition-all active:scale-[0.98] cursor-pointer shadow-sm"
-        >
-          <ShieldAlert className="w-3.5 h-3.5" />
-          <span>Panic</span>
-          <kbd className="px-1.5 py-0.2 rounded bg-red-700/80 text-[10px] font-mono text-red-100">
-            ]
-          </kbd>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSettingsClick}
-          title="Settings (Site Lock, Panic Destination)"
-          aria-label="Settings"
-          className="p-1 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.08] transition-colors cursor-pointer"
-        >
-          <Settings className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {showSettings && (
-        <div
-          className="absolute right-0 top-full mt-1.5 w-64 p-3 rounded-xl text-xs z-50 shadow-2xl"
-          style={{
-            background: "#1d1d1d",
-            boxShadow:
-              "inset 0 0 0 1px rgba(44,47,54,0.65), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 14px 30px -8px rgba(0,0,0,0.6)",
-          }}
-        >
-          <div className="text-[11px] font-medium text-zinc-400 mb-2 px-1">
-            Redirect Destination
-          </div>
-
-          <div className="space-y-0.5 mb-2.5">
-            {PANIC_PRESETS.map((preset) => (
-              <button
-                key={preset.name}
-                type="button"
-                onClick={() => saveCustomUrl(preset.url)}
-                className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition-colors cursor-pointer ${
-                  panicUrl === preset.url
-                    ? "bg-zinc-800 text-zinc-100 font-medium"
-                    : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
-                }`}
-              >
-                <span>{preset.name}</span>
-                {panicUrl === preset.url && <Check className="w-3 h-3 text-zinc-200" />}
-              </button>
-            ))}
-          </div>
-
-          <div className="pt-2 border-t border-white/[0.08]">
-            <div className="flex gap-1.5">
-              <input
-                type="text"
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                placeholder="https://..."
-                className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-2.5 py-1 text-zinc-200 placeholder-zinc-600 text-[11px] focus:outline-none focus:border-zinc-500 font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => saveCustomUrl(customInput)}
-                className="px-2.5 py-1 bg-white hover:bg-zinc-100 text-zinc-950 font-medium text-[11px] rounded-lg transition-colors cursor-pointer"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+        ]
+      </kbd>
+    </button>
   );
 }

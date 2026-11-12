@@ -108,14 +108,14 @@ export function VisitorCounter() {
           "inset 0 0 0 1px rgba(44,47,54,0.52), inset 0 0 50px 0 rgba(255,255,255,0.02), 0 10px 24px -6px rgba(0,0,0,0.5), 0 2px 6px rgba(0,0,0,0.3)",
         fontFamily: "system-ui, -apple-system, sans-serif",
       }}
-      title={offline ? "Showing the last saved total" : "Total hub views"}
+      title={offline ? "Showing the last saved total" : "Total visits to this site"}
     >
       <div className="flex items-center gap-2">
         <span
           style={CHIP_STYLE}
-          className="inline-flex items-center px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.16em] text-[#8B9099] leading-tight"
+          className="inline-flex items-center px-2.5 py-1 text-[11px] font-medium leading-tight text-[#8B9099]"
         >
-          Total hub views
+          Visits
         </span>
       </div>
       <div
@@ -127,7 +127,11 @@ export function VisitorCounter() {
         }}
         className={`flex items-center transition-opacity ${count === null ? "opacity-40 animate-pulse" : ""}`}
         role="img"
-        aria-label={count === null ? "Loading total hub views" : `${count.toLocaleString("en-US")} total hub views`}
+        aria-label={
+          count === null
+            ? "Loading total visits"
+            : `${count.toLocaleString("en-US")} total visits`
+        }
       >
         <NumberTicker end={count ?? 0} />
       </div>

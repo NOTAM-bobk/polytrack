@@ -7,7 +7,7 @@ import {
   MessageScrollerItem,
   MessageScrollerButton,
 } from "@/components/ui/message-scroller";
-import { Send, Radio, RefreshCw } from "lucide-react";
+import { Send, Radio, RefreshCw, AlertTriangle } from "lucide-react";
 import { HubMessage, loadMessages, sendMessage } from "@/lib/hubApi";
 
 export interface ChatMessage extends HubMessage {
@@ -72,7 +72,7 @@ export function LiveMessageBoard() {
       setMessages(loaded.map((message) => toChatMessage(message)));
       setError("");
     } catch {
-      setError("Live chat is offline; messages will retry when you send.");
+      setError("Chat is offline. Check your connection, then retry.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -132,6 +132,8 @@ export function LiveMessageBoard() {
     localStorage.setItem("polytrack_nickname", value);
   };
 
+  const remainingChars = 280 - inputText.length;
+
   return (
     <div
       className="solid-3d-panel flex-1 flex flex-col min-h-0 overflow-hidden"
@@ -146,7 +148,7 @@ export function LiveMessageBoard() {
       <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-2">
           <div style={CHIP_STYLE} className="p-1.5 text-zinc-300">
-            <Radio className="w-3.5 h-3.5" />
+            <Radio aria-hidden="true" className="w-3.5 h-3.5" />
           </div>
           <span className="text-xs font-semibold text-zinc-200">Trackside chat</span>
         </div>
@@ -160,14 +162,19 @@ export function LiveMessageBoard() {
             style={CHIP_STYLE}
             className="p-1.5 text-zinc-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <RefreshCw aria-hidden="true" className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
           </button>
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              loading ? "bg-amber-400 animate-pulse" : error ? "bg-red-400" : "bg-emerald-500"
-            }`}
-            aria-label={loading ? "Connecting" : error ? "Offline" : "Online"}
-          />
+          <span role="status" className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className={`w-1.5 h-1.5 rounded-full ${
+                loading ? "bg-amber-400 animate-pulse" : error ? "bg-red-400" : "bg-emerald-500"
+              }`}
+            />
+            <span className="text-[10px] font-medium text-zinc-500">
+              {loading ? "Connecting…" : error ? "Offline" : "Live"}
+            </span>
+          </span>
         </div>
       </div>
 
@@ -182,15 +189,13 @@ export function LiveMessageBoard() {
           <MessageScroller className="size-full">
             <MessageScrollerViewport className="p-3">
               <MessageScrollerContent className="gap-2.5">
-                {messages.length === 0 && !loading && (
-                  <p className="py-8 text-center text-xs text-zinc-500">
-                    No racers on comms yet. Start the conversation.
+                {messages.length === 0 && !loading && !error && (
+                  <p className="px-4 py-8 text-center text-xs leading-relaxed text-zinc-500">
+                    No messages yet. Say hello to start the chat.
                   </p>
                 )}
                 {loading && (
-                  <p className="py-8 text-center text-xs text-zinc-500">
-                    Connecting to the track...
-                  </p>
+                  <p className="py-8 text-center text-xs text-zinc-500">Connecting to chat…</p>
                 )}
                 {messages.map((message) => {
                   const isUser = message.from === "user";
@@ -237,52 +242,89 @@ export function LiveMessageBoard() {
         </MessageScrollerProvider>
       </div>
 
+      {error && (
+        <div
+          role="status"
+          className="mx-2.5 mb-2 flex items-center gap-2 rounded-xl bg-amber-500/10 px-2.5 py-2 text-[11px] text-amber-200 sm:mx-3"
+        >
+          <AlertTriangle aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 flex-1 leading-snug">{error}</span>
+          <button
+            type="button"
+            onClick={() => void refreshMessages()}
+            className="shrink-0 cursor-pointer rounded-full bg-amber-400/15 px-2 py-0.5 font-medium text-amber-100 transition-colors hover:bg-amber-400/25"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       <form
         onSubmit={handleSendMessage}
         className="p-2.5 sm:p-3 border-t border-white/[0.06] flex items-center gap-2 shrink-0"
       >
+        <label htmlFor="chat-name" className="sr-only">
+          Your display name
+        </label>
         <input
+          id="chat-name"
           type="text"
           value={nickname}
           onChange={(event) => handleNicknameChange(event.target.value)}
-          placeholder="Name"
+          placeholder="Your name…"
           title="Your name"
           maxLength={32}
+          autoComplete="nickname"
+          spellCheck={false}
           style={{
             ...CHIP_STYLE,
             borderRadius: 14,
             background: "rgba(255, 255, 255, 0.03)",
           }}
-          className="w-20 px-2.5 py-2 text-[11px] text-[#caccd2] placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600 shrink-0"
+          className="w-[5.5rem] shrink-0 px-2.5 py-2 text-[11px] text-[#caccd2] placeholder-zinc-500"
         />
+        <label htmlFor="chat-message" className="sr-only">
+          Message
+        </label>
         <input
+          id="chat-message"
           type="text"
           value={inputText}
           onChange={(event) => setInputText(event.target.value)}
-          placeholder="Write a message..."
+          placeholder="Write a message…"
           maxLength={280}
-          aria-label="Message"
+          enterKeyHint="send"
+          autoComplete="off"
+          aria-describedby={remainingChars <= 40 ? "chat-char-count" : undefined}
           style={{
             ...CHIP_STYLE,
             borderRadius: 14,
             background: "rgba(255, 255, 255, 0.03)",
           }}
-          className="flex-1 min-w-0 px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-600"
+          className="flex-1 min-w-0 px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500"
         />
+        {remainingChars <= 40 && (
+          <span
+            id="chat-char-count"
+            aria-live="polite"
+            className="shrink-0 text-[10px] tabular-nums text-zinc-500"
+          >
+            {remainingChars}
+          </span>
+        )}
         <button
           type="submit"
           disabled={!inputText.trim() || sending}
-          aria-label="Send message"
+          aria-label={sending ? "Sending message" : "Send message"}
           style={{
             ...CHIP_STYLE,
             borderRadius: 14,
           }}
-          className="flex items-center justify-center w-8 h-8 text-zinc-200 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shrink-0"
+          className="flex items-center justify-center w-8 h-8 text-zinc-200 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
         >
-          <Send className="w-3.5 h-3.5" />
+          <Send aria-hidden="true" className={`w-3.5 h-3.5 ${sending ? "animate-pulse" : ""}`} />
         </button>
       </form>
-      {error && <p className="px-3 pb-2 text-[10px] text-amber-400">{error}</p>}
     </div>
   );
 }
