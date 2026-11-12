@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Search, Play, Gamepad2 } from "lucide-react";
+import { Search, Play, Gamepad2, Flame } from "lucide-react";
+import { loadGameStats, recordGameClick } from "../lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -45,6 +46,7 @@ export interface GameItem {
   disabled?: boolean;
   badge?: string;
   badgeColor?: string;
+  clicks?: number;
 }
 
 // "BitLife Simulator" and "BitLife", "Ducklings.io" and "Ducklings", and "Retro Snake" and
@@ -205,6 +207,7 @@ export const DEFAULT_GAMES: GameItem[] = [
 export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [popularGameId, setPopularGameId] = React.useState<string | null>(null);
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
   );
@@ -244,6 +247,26 @@ export function GameCatalog() {
       })
       .catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    loadGameStats().then((stats) => {
+      if (!stats.length) return;
+      const byId = new Map(stats.map((item) => [item.id, item]));
+      setGames((current) => current.map((game) => ({ ...game, clicks: byId.get(game.id)?.clicks || 0 })));
+      setPopularGameId(stats[0].id);
+    }).catch(() => {});
+  }, []);
+
+  const handleGameClick = (game: GameItem) => {
+    markGamePlayed(game.id);
+    setGames((current) => current.map((item) => item.id === game.id ? { ...item, clicks: (item.clicks || 0) + 1 } : item));
+    setPopularGameId(game.id);
+    recordGameClick({ id: game.id, name: game.name, url: game.url }).then((updated) => {
+      if (!updated) return;
+      setGames((current) => current.map((item) => item.id === game.id ? { ...item, clicks: updated.clicks } : item));
+      loadGameStats().then((stats) => setPopularGameId(stats[0]?.id || null)).catch(() => {});
+    }).catch(() => {});
+  };
 
   const filteredGames = React.useMemo(() => {
     return games.filter((game) => {
@@ -341,6 +364,7 @@ export function GameCatalog() {
           {filteredGames.map((game) => {
             const isFeatured = !!game.featured;
             const isRecent = recentIds.has(game.id);
+            const isPopular = popularGameId === game.id;
             return (
               <div
                 key={game.id}
@@ -372,6 +396,7 @@ export function GameCatalog() {
                           Recent
                         </span>
                       )}
+                      {isPopular && <Flame title="Most played" className="shrink-0 w-3.5 h-3.5 text-orange-400 fill-orange-400/20" />}
                     </h3>
                     {game.version && (
                       <span
@@ -400,7 +425,8 @@ export function GameCatalog() {
                       ))}
                     </div>
 
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-zinc-500" title={`${game.clicks || 0} plays`}>{game.clicks || 0} plays</span>
                       {game.disabled ? (
                         <button
                           type="button"
@@ -416,7 +442,7 @@ export function GameCatalog() {
                           href={game.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          onClick={() => markGamePlayed(game.id)}
+                          onClick={() => handleGameClick(game)}
                           className="inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full text-xs font-semibold text-zinc-950 bg-white hover:bg-zinc-100 active:scale-95 transition-all duration-150 shadow-sm cursor-pointer"
                         >
                           <Play className="w-3 h-3 fill-current" />
