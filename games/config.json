@@ -15,6 +15,13 @@
       "category": "fun"
     },
     {
+      "subdomain": "awsome-tanks",
+      "name": "Awsome Tanks",
+      "url": "/games/awsome-tanks.html",
+      "description": "Use a tank and distory.",
+      "category": "tank"
+    },
+    {
       "subdomain": "ducklings",
       "name": "Ducklings",
       "url": "https://ducklings.io/",
