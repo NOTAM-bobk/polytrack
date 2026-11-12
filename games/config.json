@@ -15,6 +15,13 @@
       "category": "fun"
     },
     {
+      "subdomain": "run3",
+      "name": "Run 3",
+      "url": "/games/clrun3.html",
+      "description": "Jump around space.",
+      "category": "fun"
+    },
+    {
       "subdomain": "awsome-tanks",
       "name": "Awsome Tanks",
       "url": "/games/awsome-tanks.html",
