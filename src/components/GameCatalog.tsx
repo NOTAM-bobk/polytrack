@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame } from "lucide-react";
+import { loadGameStats, recordGameClick } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -54,6 +55,7 @@ export interface GameItem {
   disabled?: boolean;
   badge?: string;
   badgeColor?: string;
+  clicks?: number;
 }
 
 // "BitLife Simulator" and "BitLife", "Ducklings.io" and "Ducklings", and "Retro Snake" and
@@ -214,11 +216,13 @@ export const DEFAULT_GAMES: GameItem[] = [
 function GameCard({
   game,
   isRecent,
+  isPopular,
   onPlay
 }: {
   game: GameItem;
   isRecent: boolean;
-  onPlay: (id: string) => void;
+  isPopular: boolean;
+  onPlay: (game: GameItem) => void;
 }) {
   return (
     <article
@@ -237,7 +241,7 @@ function GameCard({
                 href={game.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => onPlay(game.id)}
+                onClick={() => onPlay(game)}
                 className="game-card-link min-w-0 truncate transition-colors group-hover:text-white"
               >
                 {game.name}
@@ -251,6 +255,15 @@ function GameCard({
                 className="shrink-0 px-2 py-0.5 text-[11px] font-medium text-amber-300"
               >
                 Recent
+              </span>
+            )}
+            {isPopular && (
+              <span className="shrink-0" title="Most played">
+                <Flame
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 fill-orange-400/20 text-orange-400"
+                />
+                <span className="sr-only">Most played</span>
               </span>
             )}
           </h4>
@@ -281,7 +294,15 @@ function GameCard({
             ))}
           </div>
 
-          <div className="shrink-0">
+          <div className="flex shrink-0 items-center gap-2">
+            {!game.disabled && (game.clicks || 0) > 0 && (
+              <span
+                className="text-[10px] font-mono tabular-nums text-zinc-500"
+                title={`${game.clicks} ${game.clicks === 1 ? "play" : "plays"}`}
+              >
+                {game.clicks} {game.clicks === 1 ? "play" : "plays"}
+              </span>
+            )}
             {game.disabled ? (
               <span
                 style={CHIP_STYLE}
@@ -309,6 +330,7 @@ function GameCard({
 export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [searchQuery, setSearchQuery] = React.useState(initialSearchQuery);
+  const [popularGameId, setPopularGameId] = React.useState<string | null>(null);
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
   );
@@ -349,6 +371,42 @@ export function GameCatalog() {
       })
       .catch(() => {});
   }, []);
+
+  React.useEffect(() => {
+    loadGameStats()
+      .then((stats) => {
+        if (!stats.length) return;
+        const byId = new Map(stats.map((item) => [item.id, item]));
+        setGames((current) =>
+          current.map((game) => ({ ...game, clicks: byId.get(game.id)?.clicks || 0 }))
+        );
+        setPopularGameId(stats[0].id);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleGameClick = (game: GameItem) => {
+    markGamePlayed(game.id);
+    setGames((current) =>
+      current.map((item) =>
+        item.id === game.id ? { ...item, clicks: (item.clicks || 0) + 1 } : item
+      )
+    );
+    setPopularGameId(game.id);
+    recordGameClick({ id: game.id, name: game.name, url: game.url })
+      .then((updated) => {
+        if (!updated) return;
+        setGames((current) =>
+          current.map((item) =>
+            item.id === game.id ? { ...item, clicks: updated.clicks } : item
+          )
+        );
+        loadGameStats()
+          .then((stats) => setPopularGameId(stats[0]?.id || null))
+          .catch(() => {});
+      })
+      .catch(() => {});
+  };
 
   // Keep the search in the URL so a filtered list can be reloaded or shared.
   React.useEffect(() => {
@@ -519,7 +577,8 @@ export function GameCatalog() {
                   key={game.id}
                   game={game}
                   isRecent={recentIds.has(game.id)}
-                  onPlay={markGamePlayed}
+                  isPopular={popularGameId === game.id}
+                  onPlay={handleGameClick}
                 />
               ))}
             </section>
@@ -539,7 +598,8 @@ export function GameCatalog() {
                   key={game.id}
                   game={game}
                   isRecent={recentIds.has(game.id)}
-                  onPlay={markGamePlayed}
+                  isPopular={popularGameId === game.id}
+                  onPlay={handleGameClick}
                 />
               ))}
             </section>
