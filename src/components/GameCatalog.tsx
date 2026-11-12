@@ -210,6 +210,13 @@ export const DEFAULT_GAMES: GameItem[] = [
     url: "https://2048.benlaunches.icu/",
     description: "Combine numbered tiles to reach 2048.",
     tags: ["Logic", "Puzzle", "Quick Play"]
+  },
+  {
+    id: "site-unblocked-movies",
+    name: "Unblocked Movies",
+    url: "https://nxsha.space/",
+    description: "Watch movies and shows in your browser.",
+    tags: ["Movies", "Streaming", "Media"]
   }
 ];
 

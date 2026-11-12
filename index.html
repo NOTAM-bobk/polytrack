@@ -19,7 +19,19 @@
     <meta name="twitter:description" content="Educational games and learning resources for students and classrooms.">
     <link rel="icon" href="https://www.google.com/favicon.ico" sizes="any">
     <meta name="monetag" content="a71e9b27288f5230ca0709c193abd848">
-    <script>(function(s){s.dataset.zone='12241725',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
+    <!-- Notification ads. The Settings dialog's "Turn off ads" switch sets this preference. -->
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem('polytrack_notification_ads') === 'off') return;
+        } catch (e) {}
+        var script = document.createElement('script');
+        script.id = 'notification-ads';
+        script.dataset.zone = '12241725';
+        script.src = 'https://nap5k.com/tag.min.js';
+        [document.documentElement, document.body].filter(Boolean).pop().appendChild(script);
+      })();
+    </script>
 
     <!-- Bidvertiser2108105 -->
 

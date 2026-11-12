@@ -1,5 +1,6 @@
 import * as React from "react";
-import { X, Lock, ShieldAlert, Check, Key, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { X, Lock, ShieldAlert, Check, Key, ShieldCheck, Eye, EyeOff, BellOff } from "lucide-react";
+import { areNotificationAdsBlocked, setNotificationAdsBlocked } from "@/lib/adNotifications";
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -48,6 +49,9 @@ export function SettingsModal({
   const [showPassword, setShowPassword] = React.useState(false);
   const [lockSaved, setLockSaved] = React.useState(false);
   const [lockError, setLockError] = React.useState("");
+
+  // Notification ads
+  const [adsBlocked, setAdsBlocked] = React.useState(areNotificationAdsBlocked);
 
   // Panic redirect states
   const [panicUrl, setPanicUrl] = React.useState(() => {
@@ -130,6 +134,12 @@ export function SettingsModal({
     }
     setLockSaved(true);
     setTimeout(() => setLockSaved(false), 2200);
+  };
+
+  const handleToggleAds = () => {
+    const next = !adsBlocked;
+    setAdsBlocked(next);
+    setNotificationAdsBlocked(next);
   };
 
   const handleSavePanicUrl = (url: string) => {
@@ -340,7 +350,80 @@ export function SettingsModal({
           </div>
         </div>
 
-        {/* Section 2: Emergency Panic Redirect */}
+        {/* Section 2: Notification ads */}
+        <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div
+                style={{
+                  borderRadius: 36,
+                  background: adsBlocked ? "rgba(34, 197, 94, 0.12)" : "rgba(255, 255, 255, 0.05)",
+                  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+                }}
+                className="p-1.5 text-zinc-300"
+              >
+                <BellOff
+                  aria-hidden="true"
+                  className={`w-4 h-4 ${adsBlocked ? "text-emerald-400" : "text-zinc-400"}`}
+                />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                  <span>Turn off ads</span>
+                  {adsBlocked && (
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-300">
+                      Off
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-zinc-400">
+                  Stop the notification ads that load with the page
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleToggleAds}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                adsBlocked ? "bg-emerald-600" : "bg-zinc-700"
+              }`}
+              role="switch"
+              aria-checked={adsBlocked}
+              aria-label="Turn off ads"
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition-transform duration-200 ease-in-out ${
+                  adsBlocked ? "translate-x-5" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+
+          {adsBlocked && (
+            <div
+              style={{
+                borderRadius: 10,
+                background: "rgba(0, 0, 0, 0.3)",
+                boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+              }}
+              className="flex items-center justify-between gap-2 px-3 py-2 text-[11px] text-zinc-400"
+            >
+              <span className="min-w-0 leading-snug">
+                Ads that already started on this page need one reload to stop.
+              </span>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="shrink-0 cursor-pointer rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-950 transition-colors hover:bg-zinc-100"
+              >
+                Reload page
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Section 3: Emergency Panic Redirect */}
         <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-3">
           <div className="flex items-center gap-2">
             <div
