@@ -151,6 +151,90 @@ export const DEFAULT_GAMES: GameItem[] = [
     tags: ["Quiz", "Trivia", "Challenge"]
   },
   {
+    id: "game-run3",
+    name: "Run 3",
+    url: "/games/clrun3.html",
+    description: "Jump around space and explore cosmic tunnels.",
+    tags: ["Runner", "Platformer", "Space", "Physics"]
+  },
+  {
+    id: "game-awsome-tanks",
+    name: "Awsome Tanks",
+    url: "/games/awsome-tanks.html",
+    description: "Use a tank, upgrade weapons, and destroy enemy bases.",
+    tags: ["Tanks", "Shooter", "Action", "Upgrades"]
+  },
+  {
+    id: "game-brawl-sim-3d",
+    name: "Brawl Simulator 3D",
+    url: "/games/clbrawlsimulator3d.html",
+    description: "3D arena combat with custom fighters and dynamic brawling action.",
+    tags: ["3D Combat", "Action", "Arena", "Brawler"]
+  },
+  {
+    id: "game-bloons-td4",
+    name: "Bloons Tower Defense 4",
+    url: "/games/bloons-td4.html",
+    description: "Place dart monkeys, tack shooters, and super monkeys to pop incoming bloon waves.",
+    tags: ["Flash", "Tower Defense", "Strategy", "Monkeys"]
+  },
+  {
+    id: "game-worlds-hardest-game",
+    name: "The World's Hardest Game",
+    url: "/games/the-worlds-hardest-game.html",
+    description: "Guide your red square through 30 treacherous levels. Avoid the blue balls at all costs.",
+    tags: ["Flash", "Skill", "Hard", "Classic"]
+  },
+  {
+    id: "game-learn-to-fly",
+    name: "Learn to Fly",
+    url: "/games/learn-to-fly.html",
+    description: "Upgrade your glider, rockets, and ramp to help a determined penguin soar.",
+    tags: ["Flash", "Upgrade", "Launcher", "Casual"]
+  },
+  {
+    id: "game-papas-pizzeria",
+    name: "Papa's Pizzeria",
+    url: "/games/papas-pizzeria.html",
+    description: "Run Papa Louie's pizzeria: take orders, top pizzas, bake to perfection, and cut slices.",
+    tags: ["Flash", "Cooking", "Management", "Casual"]
+  },
+  {
+    id: "game-bloxorz",
+    name: "Bloxorz",
+    url: "/games/bloxorz.html",
+    description: "Roll the 3D rectangular block across challenging puzzle stages and into the square hole.",
+    tags: ["Flash", "3D Puzzle", "Logic", "Brain"]
+  },
+  {
+    id: "game-age-of-war",
+    name: "Age of War",
+    url: "/games/age-of-war.html",
+    description: "Wage war across five ages of evolution from primitive cavemen to futuristic cyborgs.",
+    tags: ["Flash", "Strategy", "Defense", "Evolution"]
+  },
+  {
+    id: "game-henry-stickmin",
+    name: "Henry Stickmin: Breaking the Bank",
+    url: "/games/henry-stickmin-breaking-the-bank.html",
+    description: "Choose wild and hilarious methods to break into the bank vault with Henry.",
+    tags: ["Flash", "Stickman", "Funny", "Adventure"]
+  },
+  {
+    id: "game-duck-life",
+    name: "Duck Life",
+    url: "/games/duck-life.html",
+    description: "Train your duck in running, swimming, and flying to win races and save the farm.",
+    tags: ["Flash", "Training", "Racing", "Pets"]
+  },
+  {
+    id: "game-riddle-school",
+    name: "Riddle School",
+    url: "/games/riddle-school.html",
+    description: "Help Phil escape from a boring school day in this classic point-and-click puzzle adventure.",
+    tags: ["Flash", "Escape", "Puzzle", "School"]
+  },
+  {
     id: "game-cookie-clicker",
     name: "Cookie Clicker",
     url: "https://cookie.benlaunches.icu/",
@@ -158,11 +242,26 @@ export const DEFAULT_GAMES: GameItem[] = [
     tags: ["Idle", "Clicker", "Casual"]
   },
   {
+    id: "game-2048",
+    name: "2048 Puzzle",
+    url: "https://2048.benlaunches.icu/",
+    description: "Combine numbered tiles to reach 2048.",
+    tags: ["Logic", "Puzzle", "Quick Play"]
+  },
+  {
+    id: "site-unblocked-movies",
+    name: "Unblocked Movies",
+    url: "https://nxsha.space/",
+    description: "Watch movies and shows in your browser.",
+    tags: ["Movies", "Streaming", "Media"]
+  },
+  {
     id: "game-monster-track",
     name: "Monster Track",
     url: "https://monster.benlaunches.icu/",
     description: "Take a monster truck through off-road courses.",
-    tags: ["4x4", "Offroad", "Physics"]
+    tags: ["4x4", "Offroad", "Physics"],
+    disabled: true
   },
   {
     id: "game-moto-x3m",
@@ -203,20 +302,6 @@ export const DEFAULT_GAMES: GameItem[] = [
     description: "Browser-based Minecraft with survival and multiplayer.",
     tags: ["Sandbox", "Minecraft", "Multiplayer"],
     disabled: true
-  },
-  {
-    id: "game-2048",
-    name: "2048 Puzzle",
-    url: "https://2048.benlaunches.icu/",
-    description: "Combine numbered tiles to reach 2048.",
-    tags: ["Logic", "Puzzle", "Quick Play"]
-  },
-  {
-    id: "site-unblocked-movies",
-    name: "Unblocked Movies",
-    url: "https://nxsha.space/",
-    description: "Watch movies and shows in your browser.",
-    tags: ["Movies", "Streaming", "Media"]
   }
 ];
 

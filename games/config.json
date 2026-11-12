@@ -18,15 +18,96 @@
       "subdomain": "run3",
       "name": "Run 3",
       "url": "/games/clrun3.html",
-      "description": "Jump around space.",
+      "description": "Jump around space and explore cosmic tunnels.",
       "category": "fun"
     },
     {
       "subdomain": "awsome-tanks",
       "name": "Awsome Tanks",
       "url": "/games/awsome-tanks.html",
-      "description": "Use a tank and distory.",
+      "description": "Use a tank, upgrade weapons, and destroy enemy bases.",
       "category": "tank"
+    },
+    {
+      "subdomain": "brawl-sim-3d",
+      "name": "Brawl Simulator 3D",
+      "url": "/games/clbrawlsimulator3d.html",
+      "description": "3D arena combat with custom fighters and dynamic brawling action.",
+      "category": "action"
+    },
+    {
+      "subdomain": "bloons-td4",
+      "name": "Bloons Tower Defense 4",
+      "url": "/games/bloons-td4.html",
+      "description": "Place dart monkeys, tack shooters, and super monkeys to pop incoming bloon waves.",
+      "category": "strategy"
+    },
+    {
+      "subdomain": "worlds-hardest-game",
+      "name": "The World's Hardest Game",
+      "url": "/games/the-worlds-hardest-game.html",
+      "description": "Guide your red square through 30 treacherous levels. Avoid the blue balls at all costs.",
+      "category": "skill"
+    },
+    {
+      "subdomain": "learn-to-fly",
+      "name": "Learn to Fly",
+      "url": "/games/learn-to-fly.html",
+      "description": "Upgrade your glider, rockets, and ramp to help a determined penguin soar.",
+      "category": "arcade"
+    },
+    {
+      "subdomain": "papas-pizzeria",
+      "name": "Papa's Pizzeria",
+      "url": "/games/papas-pizzeria.html",
+      "description": "Run Papa Louie's pizzeria: take orders, top pizzas, bake to perfection, and cut slices.",
+      "category": "cooking"
+    },
+    {
+      "subdomain": "bloxorz",
+      "name": "Bloxorz",
+      "url": "/games/bloxorz.html",
+      "description": "Roll the 3D rectangular block across challenging puzzle stages and into the square hole.",
+      "category": "puzzle"
+    },
+    {
+      "subdomain": "age-of-war",
+      "name": "Age of War",
+      "url": "/games/age-of-war.html",
+      "description": "Wage war across five ages of evolution from primitive cavemen to futuristic cyborgs.",
+      "category": "strategy"
+    },
+    {
+      "subdomain": "henry-stickmin",
+      "name": "Henry Stickmin: Breaking the Bank",
+      "url": "/games/henry-stickmin-breaking-the-bank.html",
+      "description": "Choose wild and hilarious methods to break into the bank vault with Henry.",
+      "category": "adventure"
+    },
+    {
+      "subdomain": "duck-life",
+      "name": "Duck Life",
+      "url": "/games/duck-life.html",
+      "description": "Train your duck in running, swimming, and flying to win races and save the farm.",
+      "category": "casual"
+    },
+    {
+      "subdomain": "riddle-school",
+      "name": "Riddle School",
+      "url": "/games/riddle-school.html",
+      "description": "Help Phil escape from a boring school day in this classic point-and-click puzzle adventure.",
+      "category": "puzzle"
+    },
+    {
+      "subdomain": "cookie",
+      "name": "Cookie Clicker",
+      "url": "https://cookie.benlaunches.icu/"
+    },
+    {
+      "subdomain": "2048",
+      "name": "2048",
+      "url": "https://2048.benlaunches.icu/",
+      "category": "puzzle"
     },
     {
       "subdomain": "ducklings",
@@ -41,12 +122,6 @@
       "disabled": true
     },
     {
-      "subdomain": "2048",
-      "name": "2048",
-      "url": "https://2048.benlaunches.icu/",
-      "category": "puzzle"
-    },
-    {
       "subdomain": "snake",
       "name": "Snake",
       "url": "https://snakegame.org/",
@@ -57,11 +132,6 @@
       "name": "Monster Track",
       "url": "https://monster.benlaunches.icu/",
       "disabled": true
-    },
-    {
-      "subdomain": "cookie",
-      "name": "Cookie Clicker",
-      "url": "https://cookie.benlaunches.icu/"
     },
     {
       "subdomain": "block-blast",

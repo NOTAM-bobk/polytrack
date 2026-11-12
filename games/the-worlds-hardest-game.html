@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>The World's Hardest Game - Education Games</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d0d0f;
+      color: #e4e4e7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      height: 44px;
+      background: #1d1d1d;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      z-index: 10;
+      user-select: none;
+    }
+    .nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #d4d4d8;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+    .panic-btn {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+    .panic-btn:hover {
+      background: rgba(239, 68, 68, 0.25);
+      color: #ffffff;
+      border-color: rgba(239, 68, 68, 0.5);
+    }
+    .title-chip {
+      font-size: 13px;
+      font-weight: 600;
+      color: #f4f4f5;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    #game-container {
+      flex: 1;
+      position: relative;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    ruffle-player {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #loader {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #a1a1aa;
+      font-size: 13px;
+      pointer-events: none;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="nav-btn">← Back to Hub</a>
+    <div class="title-chip">
+      <span>The World's Hardest Game</span>
+      <span class="badge">Flash</span>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <button type="button" id="fullscreen-btn" class="nav-btn" title="Toggle Fullscreen">⛶ Fullscreen</button>
+      <button type="button" id="panic-btn" class="nav-btn panic-btn" title="Press ']' to panic redirect">Panic (])</button>
+    </div>
+  </header>
+  <div id="game-container">
+    <div id="loader">
+      <div class="spinner"></div>
+      <div id="status-text">Loading game...</div>
+    </div>
+  </div>
+  <script>
+    const PANIC_KEY = "polytrack_panic_url";
+    const DEFAULT_PANIC = "https://classroom.google.com";
+    function triggerPanic() {
+      const target = localStorage.getItem(PANIC_KEY) || DEFAULT_PANIC;
+      window.location.replace(target);
+    }
+    document.getElementById("panic-btn").addEventListener("click", triggerPanic);
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "]" && !e.metaKey && !e.ctrlKey) {
+        triggerPanic();
+      }
+    });
+
+    const fsBtn = document.getElementById("fullscreen-btn");
+    fsBtn.addEventListener("click", () => {
+      const container = document.getElementById("game-container");
+      if (!document.fullscreenElement) {
+        (container.requestFullscreen || container.webkitRequestFullscreen || container.msRequestFullscreen).call(container);
+      } else {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      }
+    });
+
+    const CDNS = [
+      "https://unpkg.com/@ruffle-rs/ruffle",
+      "https://cdn.jsdelivr.net/npm/@ruffle-rs/ruffle"
+    ];
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.async = true;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    async function startRuffle() {
+      const statusText = document.getElementById("status-text");
+      if (!window.RufflePlayer) {
+        let loaded = false;
+        for (const cdn of CDNS) {
+          try {
+            statusText.textContent = "Loading Flash player...";
+            await loadScript(cdn);
+            if (window.RufflePlayer) {
+              loaded = true;
+              break;
+            }
+          } catch (e) {
+            console.warn("Failed loading Ruffle from", cdn, e);
+          }
+        }
+        if (!loaded) {
+          statusText.textContent = "Failed to load Flash player emulator. Check network connection.";
+          return;
+        }
+      }
+
+      statusText.textContent = "Starting game...";
+      const ruffle = window.RufflePlayer.newest();
+      const player = ruffle.createPlayer();
+      player.id = "flash-player";
+      const container = document.getElementById("game-container");
+      container.appendChild(player);
+
+      player.load({
+        url: "/games/swf/the-worlds-hardest-game.swf",
+        letterbox: "on",
+        autoplay: "on"
+      }).then(() => {
+        const loader = document.getElementById("loader");
+        if (loader) loader.style.display = "none";
+      }).catch((err) => {
+        console.error("Game load error:", err);
+        statusText.textContent = "Error loading game file.";
+      });
+    }
+
+    startRuffle();
+  </script>
+</body>
+</html>
