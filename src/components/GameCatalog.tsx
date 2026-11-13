@@ -1002,12 +1002,10 @@ export function GameCatalog() {
     loadGameFlags()
       .then((flags) => {
         if (!active) return;
-        if (flags.verified.length > 0 || flags.buggy.length > 0) {
-          saveVerifiedGameIds(flags.verified);
-          saveBuggyGameIds(flags.buggy);
-          setVerifiedIds(new Set(flags.verified));
-          setBuggyIds(new Set(flags.buggy));
-        }
+        saveVerifiedGameIds(flags.verified);
+        saveBuggyGameIds(flags.buggy);
+        setVerifiedIds(new Set(flags.verified));
+        setBuggyIds(new Set(flags.buggy));
       })
       .catch(() => {});
     return () => {

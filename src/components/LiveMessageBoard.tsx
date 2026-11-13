@@ -255,10 +255,7 @@ export function LiveMessageBoard() {
           <div style={CHIP_STYLE} className="p-1.5 text-zinc-300">
             <Radio aria-hidden="true" className="w-3.5 h-3.5" />
           </div>
-          <div>
-            <span className="text-xs font-semibold text-zinc-200">Side Chat</span>
-            <div className="text-[10px] text-zinc-500 font-medium">Realtime community chat</div>
-          </div>
+          <span className="text-xs font-semibold text-zinc-200">Side Chat</span>
         </div>
         <div className="flex items-center gap-1.5">
           <button

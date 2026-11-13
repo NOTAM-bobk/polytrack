@@ -98,7 +98,7 @@ export async function loadGameFlags(): Promise<GameFlagsData> {
     }
   } catch {}
 
-  return { verified: [], buggy: [] };
+  throw new Error("Game flags are unavailable from the Cloudflare backend");
 }
 
 /**
