@@ -26,7 +26,9 @@ async function readFlagsFromD1() {
       body: JSON.stringify({ action: "list" }),
     });
 
-    if (!res.ok) return { verified: [], buggy: [], oldIds: [] };
+    // A failed read is not the same as "no badges": report it so callers can keep
+    // the last known state instead of clearing every badge.
+    if (!res.ok) return null;
 
     const data = await res.json();
     const items = Array.isArray(data.items) ? data.items : [];
@@ -51,7 +53,7 @@ async function readFlagsFromD1() {
       return { verified: [], buggy: [], oldIds };
     }
   } catch {
-    return { verified: [], buggy: [], oldIds: [] };
+    return null;
   }
 }
 
@@ -70,6 +72,10 @@ async function writeFlagsToD1(verified, buggy, oldIds = []) {
         browserInfo: "Vercel Proxy Sync",
       }),
     });
+
+    // Never delete the previous record when the new one was not stored:
+    // that would wipe every badge instead of reporting a failed save.
+    if (!postRes.ok) return false;
 
     // 2. Clean up previous records if any exist
     if (Array.isArray(oldIds) && oldIds.length > 0) {
@@ -133,6 +139,12 @@ module.exports = async function handler(req, res) {
 
     // Fallback: Read from D1 storage record
     const d1Data = await readFlagsFromD1();
+    if (!d1Data) {
+      return res.status(503).json({
+        ok: false,
+        error: "Game badges are temporarily unavailable.",
+      });
+    }
     return res.status(200).json({
       ok: true,
       verified: d1Data.verified,
@@ -182,6 +194,12 @@ module.exports = async function handler(req, res) {
 
     // Fallback: Handle action directly using D1 storage
     const current = await readFlagsFromD1();
+    if (!current) {
+      return res.status(503).json({
+        ok: false,
+        error: "Could not read the current badges, so nothing was changed. Please try again.",
+      });
+    }
     let verifiedSet = new Set(current.verified);
     let buggySet = new Set(current.buggy);
 
@@ -217,7 +235,17 @@ module.exports = async function handler(req, res) {
     const nextBuggy = Array.from(buggySet);
 
     if (action !== "get") {
-      await writeFlagsToD1(nextVerified, nextBuggy, current.oldIds);
+      const saved = await writeFlagsToD1(nextVerified, nextBuggy, current.oldIds);
+      if (!saved) {
+        // Report the stored state instead of pretending the change was saved:
+        // the admin UI otherwise confirms a sync and then reverts the selection.
+        return res.status(502).json({
+          ok: false,
+          error: "Could not save game badges. Please try again.",
+          verified: current.verified,
+          buggy: current.buggy,
+        });
+      }
     }
 
     return res.status(200).json({

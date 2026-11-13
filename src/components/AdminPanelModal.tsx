@@ -22,7 +22,7 @@ import {
 import { DEFAULT_GAMES, type GameItem } from "./GameCatalog";
 import { loadBuggyGameIds, saveBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
 import { loadVerifiedGameIds, saveVerifiedGameIds, onVerifiedGamesChange } from "@/lib/verifiedGames";
-import { loadGameFlags, updateAdminGameFlags } from "@/lib/hubApi";
+import { loadGameFlags, updateAdminGameFlags, type GameFlagsData } from "@/lib/hubApi";
 import { Cloud, UploadCloud } from "lucide-react";
 
 interface AdminPanelModalProps {
@@ -76,6 +76,10 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   const [gamesList, setGamesList] = React.useState<GameItem[]>(DEFAULT_GAMES);
 
   const panelRef = React.useRef<HTMLDivElement>(null);
+  // Only the newest badge mutation may apply its response, so a slow earlier
+  // response cannot undo a selection made in the meantime.
+  const flagRequestId = React.useRef(0);
+  const flagQueueRef = React.useRef<Promise<void>>(Promise.resolve());
 
   // Sync buggy game IDs with storage and other components
   React.useEffect(() => {
@@ -265,41 +269,58 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     setErrorMessage("");
   };
 
-  const handleToggleBugTag = async (gameId: string) => {
-    let willFlag = false;
-    setBuggyIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(gameId)) {
-        next.delete(gameId);
-        willFlag = false;
-      } else {
-        next.add(gameId);
-        willFlag = true;
-      }
-      saveBuggyGameIds(next);
-      return next;
-    });
-
-    if (password) {
+  // Badge writes run one at a time so each response reflects every earlier change,
+  // and only the newest request may update the UI.
+  const runFlagSync = React.useCallback(
+    (
+      request: () => Promise<GameFlagsData>,
+      onSuccess: (res: GameFlagsData) => void,
+      options: { successNotice?: string; failureNotice?: string } = {}
+    ) => {
+      const requestId = ++flagRequestId.current;
       setSyncingCloudflare(true);
-      try {
-        const res = await updateAdminGameFlags(password, {
-          action: "set_buggy",
-          gameId,
-          buggy: willFlag,
-        });
+      const task = flagQueueRef.current.then(async () => {
+        try {
+          const res = await request();
+          if (requestId !== flagRequestId.current) return;
+          onSuccess(res);
+          setCloudflareNotice(options.successNotice || "Saved to Cloudflare");
+          setTimeout(() => setCloudflareNotice(null), 2500);
+        } catch (err: any) {
+          if (requestId !== flagRequestId.current) return;
+          console.warn("Cloudflare sync failed:", err);
+          setCloudflareNotice(
+            options.failureNotice || err?.message || "Saved locally (Cloudflare sync failed)"
+          );
+          setTimeout(() => setCloudflareNotice(null), 3500);
+        } finally {
+          if (requestId === flagRequestId.current) setSyncingCloudflare(false);
+        }
+      });
+      flagQueueRef.current = task;
+      return task;
+    },
+    []
+  );
+
+  const handleToggleBugTag = async (gameId: string) => {
+    // Compute the next value before updating state: React applies updater functions
+    // later, so reading the value inside one sends a stale request to the backend.
+    const willFlag = !buggyIds.has(gameId);
+    const next = new Set(buggyIds);
+    if (willFlag) next.add(gameId);
+    else next.delete(gameId);
+    setBuggyIds(next);
+    saveBuggyGameIds(next);
+
+    if (!password) return;
+    await runFlagSync(
+      () => updateAdminGameFlags(password, { action: "set_buggy", gameId, buggy: willFlag }),
+      (res) => {
         setBuggyIds(new Set(res.buggy));
         saveBuggyGameIds(res.buggy);
-        setCloudflareNotice("Saved to Cloudflare");
-        setTimeout(() => setCloudflareNotice(null), 2500);
-      } catch (err: any) {
-        console.warn("Cloudflare sync failed:", err);
-        setCloudflareNotice("Saved locally (Cloudflare sync failed)");
-        setTimeout(() => setCloudflareNotice(null), 3000);
-      } finally {
-        setSyncingCloudflare(false);
       }
-    }
+    );
   };
 
   const handleClearAllBugTags = async () => {
@@ -307,57 +328,35 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     saveBuggyGameIds([]);
     setBuggyIds(new Set());
 
-    if (password) {
-      setSyncingCloudflare(true);
-      try {
-        const res = await updateAdminGameFlags(password, { action: "clear_buggy" });
+    if (!password) return;
+    await runFlagSync(
+      () => updateAdminGameFlags(password, { action: "clear_buggy" }),
+      (res) => {
         setBuggyIds(new Set(res.buggy));
         saveBuggyGameIds(res.buggy);
-        setCloudflareNotice("Cleared on Cloudflare");
-        setTimeout(() => setCloudflareNotice(null), 2500);
-      } catch (err: any) {
-        console.warn("Cloudflare clear failed:", err);
-      } finally {
-        setSyncingCloudflare(false);
-      }
-    }
+      },
+      { successNotice: "Cleared on Cloudflare" }
+    );
   };
 
   const handleToggleVerified = async (gameId: string) => {
-    let willVerify = false;
-    setVerifiedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(gameId)) {
-        next.delete(gameId);
-        willVerify = false;
-      } else {
-        next.add(gameId);
-        willVerify = true;
-      }
-      saveVerifiedGameIds(next);
-      return next;
-    });
+    // Compute the next value before updating state: React applies updater functions
+    // later, so reading the value inside one sends a stale request to the backend.
+    const willVerify = !verifiedIds.has(gameId);
+    const next = new Set(verifiedIds);
+    if (willVerify) next.add(gameId);
+    else next.delete(gameId);
+    setVerifiedIds(next);
+    saveVerifiedGameIds(next);
 
-    if (password) {
-      setSyncingCloudflare(true);
-      try {
-        const res = await updateAdminGameFlags(password, {
-          action: "set_verified",
-          gameId,
-          verified: willVerify,
-        });
+    if (!password) return;
+    await runFlagSync(
+      () => updateAdminGameFlags(password, { action: "set_verified", gameId, verified: willVerify }),
+      (res) => {
         setVerifiedIds(new Set(res.verified));
         saveVerifiedGameIds(res.verified);
-        setCloudflareNotice("Saved to Cloudflare");
-        setTimeout(() => setCloudflareNotice(null), 2500);
-      } catch (err: any) {
-        console.warn("Cloudflare sync failed:", err);
-        setCloudflareNotice("Saved locally (Cloudflare sync failed)");
-        setTimeout(() => setCloudflareNotice(null), 3000);
-      } finally {
-        setSyncingCloudflare(false);
       }
-    }
+    );
   };
 
   const handleClearAllVerified = async () => {
@@ -365,43 +364,34 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     saveVerifiedGameIds([]);
     setVerifiedIds(new Set());
 
-    if (password) {
-      setSyncingCloudflare(true);
-      try {
-        const res = await updateAdminGameFlags(password, { action: "clear_verified" });
+    if (!password) return;
+    await runFlagSync(
+      () => updateAdminGameFlags(password, { action: "clear_verified" }),
+      (res) => {
         setVerifiedIds(new Set(res.verified));
         saveVerifiedGameIds(res.verified);
-        setCloudflareNotice("Cleared on Cloudflare");
-        setTimeout(() => setCloudflareNotice(null), 2500);
-      } catch (err: any) {
-        console.warn("Cloudflare clear failed:", err);
-      } finally {
-        setSyncingCloudflare(false);
-      }
-    }
+      },
+      { successNotice: "Cleared on Cloudflare" }
+    );
   };
 
   const handlePushAllToCloudflare = async () => {
     if (!password) return;
-    setSyncingCloudflare(true);
-    try {
-      const res = await updateAdminGameFlags(password, {
-        action: "sync_all",
-        verified: Array.from(verifiedIds),
-        buggy: Array.from(buggyIds),
-      });
-      setVerifiedIds(new Set(res.verified));
-      setBuggyIds(new Set(res.buggy));
-      saveVerifiedGameIds(res.verified);
-      saveBuggyGameIds(res.buggy);
-      setCloudflareNotice("Synced all games to Cloudflare!");
-      setTimeout(() => setCloudflareNotice(null), 3000);
-    } catch (err: any) {
-      setCloudflareNotice(err?.message || "Sync to Cloudflare failed");
-      setTimeout(() => setCloudflareNotice(null), 3500);
-    } finally {
-      setSyncingCloudflare(false);
-    }
+    await runFlagSync(
+      () =>
+        updateAdminGameFlags(password, {
+          action: "sync_all",
+          verified: Array.from(verifiedIds),
+          buggy: Array.from(buggyIds),
+        }),
+      (res) => {
+        setVerifiedIds(new Set(res.verified));
+        setBuggyIds(new Set(res.buggy));
+        saveVerifiedGameIds(res.verified);
+        saveBuggyGameIds(res.buggy);
+      },
+      { successNotice: "Synced all games to Cloudflare!" }
+    );
   };
 
   const handleUpdateStatus = async (id: number, nextStatus: "open" | "resolved") => {

@@ -98,7 +98,9 @@ export async function loadGameFlags(): Promise<GameFlagsData> {
     }
   } catch {}
 
-  return { verified: [], buggy: [] };
+  // Throw instead of returning empty lists: callers keep the badges already
+  // stored on this device rather than clearing them on a failed read.
+  throw new Error("Game badges are unavailable from the backend");
 }
 
 /**
@@ -142,9 +144,8 @@ export async function updateAdminGameFlags(
         },
         body: JSON.stringify(reqBody),
       });
-      if (flagsRes.ok) {
-        res = flagsRes;
-      }
+      // Keep the newest response even when it failed so its error is shown.
+      res = flagsRes;
     } catch {}
   }
 
