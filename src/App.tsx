@@ -8,6 +8,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { SiteLock } from "./components/SiteLock";
 import { BugReportModal } from "./components/BugReportModal";
 import { AdminPanelModal } from "./components/AdminPanelModal";
+import { FeatureTooltips } from "./components/FeatureTooltips";
 import { HalftoneHorizon } from "./components/ui/halftone-horizon";
 import { Compass, Send, Sparkles, Settings, Gamepad2, MessageCircle, Bug, Shield } from "lucide-react";
 import { applyTabCloak, loadTabCloakSettings, saveTabCloakSettings, type TabCloakSettings } from "./lib/tabCloak";
@@ -97,6 +98,7 @@ export function App() {
             >
               <a
                 href="/submit/"
+                data-hint-target="submit-game"
                 aria-label="Submit a game"
                 style={CHIP_STYLE}
                 title="Submit a game"
@@ -135,6 +137,7 @@ export function App() {
             <div className="order-2 ml-0 flex shrink-0 items-center gap-1 sm:ml-auto sm:gap-2">
               <button
                 type="button"
+                data-hint-target="settings"
                 onClick={() => setSettingsOpen(true)}
                 title="Settings & Site Lock"
                 aria-label="Settings"
@@ -225,6 +228,7 @@ export function App() {
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
+                data-hint-target="bug-report"
                 onClick={() => setBugModalOpen(true)}
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-zinc-300 hover:text-white transition-colors hover:bg-white/[0.08] cursor-pointer"
                 style={CHIP_STYLE}
@@ -277,6 +281,8 @@ export function App() {
         isOpen={adminModalOpen}
         onClose={() => setAdminModalOpen(false)}
       />
+
+      <FeatureTooltips />
     </HalftoneHorizon>
   );
 }

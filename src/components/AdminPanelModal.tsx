@@ -13,8 +13,14 @@ import {
   Trash2,
   Lock,
   LogOut,
-  ExternalLink,
+  Bug,
+  Search,
+  Check,
+  RotateCcw,
+  Sparkles,
 } from "lucide-react";
+import { DEFAULT_GAMES, type GameItem } from "./GameCatalog";
+import { loadBuggyGameIds, saveBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
 
 interface AdminPanelModalProps {
   isOpen: boolean;
@@ -54,7 +60,47 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   const [actionLoadingId, setActionLoadingId] = React.useState<number | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = React.useState<number | null>(null);
 
+  // Admin tabs: "bugs" (reports) or "tags" (select games with "error:bug" tag)
+  const [adminTab, setAdminTab] = React.useState<"bugs" | "tags">("tags");
+  const [buggyIds, setBuggyIds] = React.useState<Set<string>>(loadBuggyGameIds);
+  const [gameSearch, setGameSearch] = React.useState("");
+  const [gameFilter, setGameFilter] = React.useState<"all" | "flagged" | "clean">("all");
+  const [gamesList, setGamesList] = React.useState<GameItem[]>(DEFAULT_GAMES);
+
   const panelRef = React.useRef<HTMLDivElement>(null);
+
+  // Sync buggy game IDs with storage and other components
+  React.useEffect(() => {
+    return onBuggyGamesChange((updated) => {
+      setBuggyIds(updated);
+    });
+  }, []);
+
+  // Load games from config.json to complement DEFAULT_GAMES
+  React.useEffect(() => {
+    fetch("/games/config.json", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.games)) {
+          const loaded: GameItem[] = data.games.map((g: any, idx: number) => ({
+            id: `cfg-${g.subdomain || idx}`,
+            name: g.name || "Game",
+            url: g.url || "#",
+            description: g.description || "",
+            tags: g.category ? [g.category.toUpperCase(), "Web"] : ["Catalog"],
+          }));
+          setGamesList((prev) => {
+            const map = new Map<string, GameItem>();
+            for (const item of prev) map.set(item.id, item);
+            for (const item of loaded) {
+              if (!map.has(item.id)) map.set(item.id, item);
+            }
+            return Array.from(map.values());
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Rate limit countdown
   React.useEffect(() => {
@@ -71,7 +117,6 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     setErrorMessage("");
 
     try {
-      // First try /api/admin (Vercel Serverless Function that reads process.env.ADMIN_PASSWORD)
       let res = await fetch("/api/admin", {
         method: "POST",
         headers: {
@@ -81,7 +126,6 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
         body: JSON.stringify({ action: "list", password: pwd }),
       });
 
-      // If /api/admin is not yet routed or 404, fallback to /api/hub/admin/bugs
       if (res.status === 404) {
         res = await fetch("/api/hub/admin/bugs", {
           method: "POST",
@@ -116,7 +160,7 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
         return false;
       }
 
-      setBugs(Array.isArray(data.bugs) ? data.bugs : []);
+      setBugs(Array.isArray(data.bugs) ? data.bugs : (Array.isArray(data.items) ? data.items : []));
       setIsAuthenticated(true);
       sessionStorage.setItem("polytrack_admin_session_pwd", pwd);
       return true;
@@ -191,6 +235,25 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     sessionStorage.removeItem("polytrack_admin_session_pwd");
     setBugs([]);
     setErrorMessage("");
+  };
+
+  const handleToggleBugTag = (gameId: string) => {
+    setBuggyIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(gameId)) {
+        next.delete(gameId);
+      } else {
+        next.add(gameId);
+      }
+      saveBuggyGameIds(next);
+      return next;
+    });
+  };
+
+  const handleClearAllBugTags = () => {
+    if (!window.confirm("Remove the 'error:bug' tag from all games?")) return;
+    saveBuggyGameIds([]);
+    setBuggyIds(new Set());
   };
 
   const handleUpdateStatus = async (id: number, nextStatus: "open" | "resolved") => {
@@ -274,6 +337,19 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   const openCount = bugs.filter((b) => b.status === "open").length;
   const resolvedCount = bugs.filter((b) => b.status === "resolved").length;
 
+  const filteredGames = gamesList.filter((game) => {
+    const isFlagged = buggyIds.has(game.id);
+    if (gameFilter === "flagged" && !isFlagged) return false;
+    if (gameFilter === "clean" && isFlagged) return false;
+    if (!gameSearch.trim()) return true;
+    const q = gameSearch.toLowerCase().trim();
+    return (
+      game.name.toLowerCase().includes(q) ||
+      (game.tags && game.tags.some((t) => t.toLowerCase().includes(q))) ||
+      game.url.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/80 p-3 backdrop-blur-sm sm:p-4"
@@ -329,7 +405,7 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
                   onClick={() => fetchBugs(password)}
                   disabled={loading}
                   className="p-1.5 text-zinc-400 hover:text-white rounded-lg transition-colors hover:bg-white/[0.08] cursor-pointer"
-                  title="Refresh bug reports"
+                  title="Refresh data"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
                 </button>
@@ -430,155 +506,361 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
             </div>
           </form>
         ) : (
-          /* Unlocked Bug List View */
+          /* Unlocked Admin View with Tabs */
           <div className="flex flex-col gap-3 min-h-0 flex-1">
-            {/* Filter Pills */}
-            <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/[0.06]">
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setFilter("open")}
-                  style={CHIP_STYLE}
-                  className={`px-3 py-1 text-xs cursor-pointer transition-colors ${
-                    filter === "open"
-                      ? "bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  Open ({openCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter("resolved")}
-                  style={CHIP_STYLE}
-                  className={`px-3 py-1 text-xs cursor-pointer transition-colors ${
-                    filter === "resolved"
-                      ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  Resolved ({resolvedCount})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFilter("all")}
-                  style={CHIP_STYLE}
-                  className={`px-3 py-1 text-xs cursor-pointer transition-colors ${
-                    filter === "all"
-                      ? "bg-white/[0.12] text-white font-semibold"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  All ({bugs.length})
-                </button>
-              </div>
-
-              <span className="text-[11px] text-zinc-500 font-mono">
-                {bugs.length} total reports
-              </span>
+            {/* Main Tabs Navigation */}
+            <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2">
+              <button
+                type="button"
+                onClick={() => setAdminTab("tags")}
+                style={CHIP_STYLE}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  adminTab === "tags"
+                    ? "bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Bug className="w-3.5 h-3.5 text-rose-400" />
+                <span>error:bug Game Tags</span>
+                {buggyIds.size > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-rose-500/30 text-rose-200">
+                    {buggyIds.size}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminTab("bugs")}
+                style={CHIP_STYLE}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  adminTab === "bugs"
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5 text-blue-400" />
+                <span>Bug Reports</span>
+                {bugs.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-blue-500/30 text-blue-200">
+                    {bugs.length}
+                  </span>
+                )}
+              </button>
             </div>
 
-            {/* Bugs Scroll List */}
-            <div className="overflow-y-auto pr-1 space-y-2.5 max-h-[50vh]">
-              {filteredBugs.length === 0 ? (
-                <div className="py-12 text-center text-zinc-500 text-xs">
-                  No {filter !== "all" ? filter : ""} bug reports found.
+            {/* TAB 1: Game Bug Tags Selector */}
+            {adminTab === "tags" && (
+              <div className="flex flex-col gap-3 min-h-0 flex-1">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-200">
+                      Select games to tag with “error:bug”
+                    </span>
+                    {buggyIds.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllBugTags}
+                        className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Clear all ({buggyIds.size})</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Selected games will display a prominent <code className="text-rose-300 font-mono">error:bug</code> tag directly on their game card to inform players.
+                  </p>
                 </div>
-              ) : (
-                filteredBugs.map((bug) => {
-                  const isBusy = actionLoadingId === bug.id;
-                  const isResolved = bug.status === "resolved";
 
-                  return (
-                    <div
-                      key={bug.id}
+                {/* Search & Filter Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="relative flex-1 min-w-[180px]">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                    <input
+                      type="text"
+                      value={gameSearch}
+                      onChange={(e) => setGameSearch(e.target.value)}
+                      placeholder="Filter games by name or tag…"
                       style={{
-                        borderRadius: 14,
-                        background: "rgba(255, 255, 255, 0.03)",
-                        boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.05)",
+                        borderRadius: 10,
+                        background: "rgba(255, 255, 255, 0.04)",
+                        boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.06)",
                       }}
-                      className="p-3.5 flex flex-col gap-2 transition-all hover:bg-white/[0.04]"
+                      className="w-full py-1.5 pl-8 pr-3 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setGameFilter("all")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        gameFilter === "all" ? "bg-white/[0.12] text-white font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <span className="font-mono text-[11px] font-semibold text-zinc-400">
-                            #{bug.id}
-                          </span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
-                              isResolved
-                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                            }`}
-                          >
-                            {isResolved ? "Resolved" : "Open"}
-                          </span>
-                          {bug.game_url && (
-                            <span className="px-2 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-300 font-mono truncate max-w-[200px]">
-                              {bug.game_url}
-                            </span>
-                          )}
-                        </div>
+                      All ({gamesList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGameFilter("flagged")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        gameFilter === "flagged" ? "bg-rose-500/20 text-rose-300 font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Tagged ({buggyIds.size})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGameFilter("clean")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        gameFilter === "clean" ? "bg-white/[0.12] text-white font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Clean ({gamesList.length - buggyIds.size})
+                    </button>
+                  </div>
+                </div>
 
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() =>
-                              handleUpdateStatus(bug.id, isResolved ? "open" : "resolved")
-                            }
-                            className={`p-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
-                              isResolved
-                                ? "text-amber-400 hover:bg-amber-500/10"
-                                : "text-emerald-400 hover:bg-emerald-500/10"
-                            }`}
-                            title={isResolved ? "Mark as Open" : "Mark as Resolved"}
-                          >
-                            {isBusy ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                            )}
-                          </button>
-
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => handleDelete(bug.id)}
-                            className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                            title="Delete report"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {bug.title && (
-                        <h4 className="text-xs font-semibold text-zinc-100 leading-snug">
-                          {bug.title}
-                        </h4>
-                      )}
-
-                      <p className="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed font-sans">
-                        {bug.description}
-                      </p>
-
-                      <div className="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-white/[0.04]">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-zinc-600" />
-                          {new Date(bug.created_at).toLocaleString()}
-                        </span>
-                        {bug.browser_info && (
-                          <span className="truncate max-w-[220px]" title={bug.browser_info}>
-                            {bug.browser_info}
-                          </span>
-                        )}
-                      </div>
+                {/* Games List with Toggle Checkbox */}
+                <div className="overflow-y-auto pr-1 space-y-1.5 max-h-[45vh]">
+                  {filteredGames.length === 0 ? (
+                    <div className="py-12 text-center text-zinc-500 text-xs">
+                      No games match "{gameSearch}".
                     </div>
-                  );
-                })
-              )}
-            </div>
+                  ) : (
+                    filteredGames.map((game) => {
+                      const isBuggy = buggyIds.has(game.id);
+                      return (
+                        <div
+                          key={game.id}
+                          onClick={() => handleToggleBugTag(game.id)}
+                          style={{
+                            borderRadius: 12,
+                            background: isBuggy ? "rgba(239, 68, 68, 0.08)" : "rgba(255, 255, 255, 0.03)",
+                            boxShadow: isBuggy
+                              ? "inset 0 0 0 1px rgba(239, 68, 68, 0.25)"
+                              : "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+                          }}
+                          className="p-2.5 flex items-center justify-between gap-3 transition-colors hover:bg-white/[0.05] cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* Checkbox indicator */}
+                            <div
+                              className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors ${
+                                isBuggy
+                                  ? "bg-rose-500 text-white shadow-sm"
+                                  : "border border-zinc-600 group-hover:border-zinc-400"
+                              }`}
+                            >
+                              {isBuggy && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-semibold truncate ${isBuggy ? "text-rose-200" : "text-zinc-200"}`}>
+                                  {game.name}
+                                </span>
+                                {isBuggy && (
+                                  <span
+                                    style={{
+                                      ...CHIP_STYLE,
+                                      background: "rgba(239, 68, 68, 0.2)",
+                                      border: "1px solid rgba(239, 68, 68, 0.35)",
+                                      color: "#fca5a5",
+                                    }}
+                                    className="px-2 py-0.2 text-[10px] font-mono font-bold tracking-wide rounded-full inline-flex items-center gap-1"
+                                  >
+                                    <Bug className="w-2.5 h-2.5 text-rose-400" />
+                                    error:bug
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-zinc-500 truncate mt-0.5">
+                                <span className="truncate">{game.url}</span>
+                                {game.tags && game.tags.length > 0 && (
+                                  <span className="text-zinc-400">· {game.tags.slice(0, 2).join(", ")}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleBugTag(game.id);
+                            }}
+                            className={`shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer ${
+                              isBuggy
+                                ? "bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/30"
+                                : "bg-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.1]"
+                            }`}
+                          >
+                            {isBuggy ? "Remove Tag" : "Add error:bug"}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 2: Bug Reports List View */}
+            {adminTab === "bugs" && (
+              <div className="flex flex-col gap-3 min-h-0 flex-1">
+                {/* Filter Pills */}
+                <div className="flex items-center justify-between gap-2 pb-1 border-b border-white/[0.06]">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setFilter("open")}
+                      style={CHIP_STYLE}
+                      className={`px-3 py-1 text-xs cursor-pointer transition-colors ${
+                        filter === "open"
+                          ? "bg-amber-500/20 text-amber-300 font-semibold border border-amber-500/30"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Open ({openCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilter("resolved")}
+                      style={CHIP_STYLE}
+                      className={`px-3 py-1 text-xs cursor-pointer transition-colors ${
+                        filter === "resolved"
+                          ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Resolved ({resolvedCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFilter("all")}
+                      style={CHIP_STYLE}
+                      className={`px-3 py-1 text-xs cursor-pointer transition-colors ${
+                        filter === "all"
+                          ? "bg-white/[0.12] text-white font-semibold"
+                          : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      All ({bugs.length})
+                    </button>
+                  </div>
+
+                  <span className="text-[11px] text-zinc-500 font-mono">
+                    {bugs.length} total reports
+                  </span>
+                </div>
+
+                {/* Bugs Scroll List */}
+                <div className="overflow-y-auto pr-1 space-y-2.5 max-h-[48vh]">
+                  {filteredBugs.length === 0 ? (
+                    <div className="py-12 text-center text-zinc-500 text-xs">
+                      No {filter !== "all" ? filter : ""} bug reports found.
+                    </div>
+                  ) : (
+                    filteredBugs.map((bug) => {
+                      const isBusy = actionLoadingId === bug.id;
+                      const isResolved = bug.status === "resolved";
+
+                      return (
+                        <div
+                          key={bug.id}
+                          style={{
+                            borderRadius: 14,
+                            background: "rgba(255, 255, 255, 0.03)",
+                            boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.05)",
+                          }}
+                          className="p-3.5 flex flex-col gap-2 transition-all hover:bg-white/[0.04]"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
+                              <span className="font-mono text-[11px] font-semibold text-zinc-400">
+                                #{bug.id}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                                  isResolved
+                                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                    : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                }`}
+                              >
+                                {isResolved ? "Resolved" : "Open"}
+                              </span>
+                              {bug.game_url && (
+                                <span className="px-2 py-0.5 rounded bg-zinc-800 text-[10px] text-zinc-300 font-mono truncate max-w-[200px]">
+                                  {bug.game_url}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() =>
+                                  handleUpdateStatus(bug.id, isResolved ? "open" : "resolved")
+                                }
+                                className={`p-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors ${
+                                  isResolved
+                                    ? "text-amber-400 hover:bg-amber-500/10"
+                                    : "text-emerald-400 hover:bg-emerald-500/10"
+                                }`}
+                                title={isResolved ? "Mark as Open" : "Mark as Resolved"}
+                              >
+                                {isBusy ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => handleDelete(bug.id)}
+                                className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                                title="Delete report"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {bug.title && (
+                            <h4 className="text-xs font-semibold text-zinc-100 leading-snug">
+                              {bug.title}
+                            </h4>
+                          )}
+
+                          <p className="text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed font-sans">
+                            {bug.description}
+                          </p>
+
+                          <div className="flex items-center justify-between text-[10px] text-zinc-500 pt-1 border-t border-white/[0.04]">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-zinc-600" />
+                              {new Date(bug.created_at).toLocaleString()}
+                            </span>
+                            {bug.browser_info && (
+                              <span className="truncate max-w-[220px]" title={bug.browser_info}>
+                                {bug.browser_info}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

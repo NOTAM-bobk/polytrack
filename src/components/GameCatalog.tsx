@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star, Bug } from "lucide-react";
+import { loadBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
 import { loadGameStats, recordGameClick } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
@@ -117,6 +118,7 @@ export interface GameItem {
   badgeColor?: string;
   clicks?: number;
   editorsPick?: boolean;
+  errorBug?: boolean;
 }
 
 function nameKey(name: string) {
@@ -174,7 +176,8 @@ export function mergeCatalog(defaults: GameItem[], loaded: GameItem[]): GameItem
           ? match.description
           : item.description,
       disabled: match.disabled ?? item.disabled,
-      editorsPick: match.editorsPick ?? item.editorsPick
+      editorsPick: match.editorsPick ?? item.editorsPick,
+      errorBug: match.errorBug ?? item.errorBug
     });
   }
 
@@ -785,6 +788,7 @@ function GameCard({
   isRecent,
   isPopular,
   isFavorite,
+  isBuggy,
   searchQuery,
   onPlay,
   onToggleFavorite
@@ -793,6 +797,7 @@ function GameCard({
   isRecent: boolean;
   isPopular: boolean;
   isFavorite: boolean;
+  isBuggy: boolean;
   searchQuery: string;
   onPlay: (game: GameItem) => void;
   onToggleFavorite: (id: string, event?: React.MouseEvent) => void;
@@ -838,6 +843,21 @@ function GameCard({
                 <span>Editor's Pick</span>
               </span>
             )}
+            {isBuggy && (
+              <span
+                title="Known bug or issue reported for this game"
+                style={{
+                  ...CHIP_STYLE,
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(185, 28, 28, 0.16))",
+                  border: "1px solid rgba(239, 68, 68, 0.45)",
+                  color: "#fca5a5"
+                }}
+                className="inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-[10.5px] font-semibold tracking-wide font-mono"
+              >
+                <Bug aria-hidden="true" className="h-3 w-3 text-red-400 shrink-0" />
+                <span>error:bug</span>
+              </span>
+            )}
             {isRecent && (
               <span
                 title="You played this in the last week"
@@ -857,7 +877,7 @@ function GameCard({
               </span>
             )}
           </h4>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="relative z-20 flex shrink-0 items-center gap-1.5">
             {game.version && (
               <span
                 style={CHIP_STYLE}
@@ -868,14 +888,20 @@ function GameCard({
             )}
             <button
               type="button"
-              onClick={(e) => onToggleFavorite(game.id, e)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onToggleFavorite(game.id, e);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
               aria-label={isFavorite ? `Remove ${game.name} from favorites` : `Add ${game.name} to favorites`}
               title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-              className="group/fav inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-400 transition-all hover:bg-white/[0.08] hover:text-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 active:scale-90"
+              className="relative z-20 group/fav inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-all hover:bg-white/[0.12] hover:text-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 active:scale-90"
             >
               <Star
                 aria-hidden="true"
-                className={`h-4 w-4 transition-colors ${
+                className={`h-4 w-4 pointer-events-none transition-colors ${
                   isFavorite
                     ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
                     : "stroke-[1.75] text-zinc-400 group-hover/fav:text-amber-300"
@@ -947,6 +973,11 @@ export function GameCatalog() {
     () => new Set(loadRecentGames().map((entry) => entry.id))
   );
   const [favoriteIds, setFavoriteIds] = React.useState<Set<string>>(() => new Set(loadFavorites()));
+  const [buggyIds, setBuggyIds] = React.useState<Set<string>>(loadBuggyGameIds);
+
+  React.useEffect(() => {
+    return onBuggyGamesChange((updated) => setBuggyIds(updated));
+  }, []);
 
   const toggleFavorite = React.useCallback((id: string, event?: React.MouseEvent) => {
     if (event) {
@@ -996,7 +1027,8 @@ export function GameCatalog() {
             description: g.description || `${g.name} game from games catalog.`,
             tags: g.category ? [g.category.toUpperCase(), "Web"] : ["Catalog", "Web"],
             disabled: !!g.disabled,
-            editorsPick: !!g.editorsPick
+            editorsPick: !!g.editorsPick,
+            errorBug: !!g.errorBug || !!g.buggy
           }));
 
           setGames((prev) => mergeCatalog(prev, loaded));
@@ -1395,6 +1427,7 @@ export function GameCatalog() {
                   isRecent={recentIds.has(game.id)}
                   isPopular={popularGameId === game.id}
                   isFavorite={favoriteIds.has(game.id)}
+                  isBuggy={buggyIds.has(game.id) || !!game.errorBug}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
                   onToggleFavorite={toggleFavorite}
@@ -1419,6 +1452,7 @@ export function GameCatalog() {
                   isRecent={recentIds.has(game.id)}
                   isPopular={popularGameId === game.id}
                   isFavorite={favoriteIds.has(game.id)}
+                  isBuggy={buggyIds.has(game.id) || !!game.errorBug}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
                   onToggleFavorite={toggleFavorite}
