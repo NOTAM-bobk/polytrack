@@ -35,6 +35,22 @@
       "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/bugs"
     },
     {
+      "source": "/api/hub/games/flags",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/games/flags"
+    },
+    {
+      "source": "/api/hub/games/flags/",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/games/flags"
+    },
+    {
+      "source": "/api/hub/admin/flags",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/flags"
+    },
+    {
+      "source": "/api/hub/admin/flags/",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/flags"
+    },
+    {
       "source": "/api/hub/:path*",
       "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/:path*"
     },

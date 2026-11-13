@@ -80,6 +80,12 @@ function schema(e) {
       e.DB.prepare(
         "CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL DEFAULT 1,first_seen INTEGER NOT NULL,last_seen INTEGER NOT NULL)"
       ),
+      e.DB.prepare(
+        "CREATE TABLE IF NOT EXISTS game_flags(game_id TEXT PRIMARY KEY,verified INTEGER NOT NULL DEFAULT 0,buggy INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL)"
+      ),
+      e.DB.prepare(
+        "CREATE TABLE IF NOT EXISTS admin_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL)"
+      ),
     ]).catch((x) => {
       ready = null;
       return Promise.reject(x);
@@ -335,6 +341,127 @@ async function adminBugs(r, e) {
   });
 }
 
+
+// GAME FLAGS (VERIFIED & BUG-TAGGED)
+async function gameFlags(r, e) {
+  if (r.method === "GET") {
+    try {
+      const q = await e.DB.prepare(
+        "SELECT game_id, verified, buggy FROM game_flags WHERE verified = 1 OR buggy = 1"
+      ).all();
+      const verified = [];
+      const buggy = [];
+      for (const row of q.results || []) {
+        if (row.verified) verified.push(row.game_id);
+        if (row.buggy) buggy.push(row.game_id);
+      }
+      return json(r, { ok: true, verified, buggy });
+    } catch {
+      return json(r, { ok: true, verified: [], buggy: [] });
+    }
+  }
+  return fail(r, "Use GET for game flags.", 405);
+}
+
+async function adminFlags(r, e) {
+  const clientIp = ip(r);
+  const ipHash = await digest(clientIp);
+
+  const isVercelVerified = r.headers.get("x-vercel-admin-verified") === "1";
+  const b = await read(r);
+  const given = r.headers.get("x-admin-password") || b?.password || "";
+
+  let authorized = false;
+  if (isVercelVerified) {
+    authorized = true;
+  } else if (e.ADMIN_PASSWORD && equal(given, e.ADMIN_PASSWORD)) {
+    authorized = true;
+  }
+
+  if (!authorized) {
+    await checkRateLimit(e.DB, "admin_flags_fail:" + ipHash, 5, 600);
+    return fail(r, "Unauthorized. Incorrect admin password.", 401);
+  }
+
+  const now = new Date().toISOString();
+  const action = clean(b?.action, 50, "get");
+
+  if (action === "toggle_verified") {
+    const gameId = clean(b?.gameId || b?.id, 120);
+    if (!gameId) return fail(r, "gameId is required", 422);
+    const existing = await e.DB.prepare("SELECT verified FROM game_flags WHERE game_id = ?").bind(gameId).first();
+    if (!existing) {
+      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 1, 0, ?)").bind(gameId, now).run();
+    } else {
+      const nextVer = existing.verified ? 0 : 1;
+      await e.DB.prepare("UPDATE game_flags SET verified = ?, updated_at = ? WHERE game_id = ?").bind(nextVer, now, gameId).run();
+    }
+  } else if (action === "set_verified") {
+    const gameId = clean(b?.gameId || b?.id, 120);
+    const val = b?.verified ? 1 : 0;
+    if (!gameId) return fail(r, "gameId is required", 422);
+    await e.DB.prepare(
+      "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, ?, 0, ?) ON CONFLICT(game_id) DO UPDATE SET verified = excluded.verified, updated_at = excluded.updated_at"
+    ).bind(gameId, val, now).run();
+  } else if (action === "clear_verified") {
+    await e.DB.prepare("UPDATE game_flags SET verified = 0, updated_at = ?").bind(now).run();
+  } else if (action === "toggle_buggy") {
+    const gameId = clean(b?.gameId || b?.id, 120);
+    if (!gameId) return fail(r, "gameId is required", 422);
+    const existing = await e.DB.prepare("SELECT buggy FROM game_flags WHERE game_id = ?").bind(gameId).first();
+    if (!existing) {
+      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 0, 1, ?)").bind(gameId, now).run();
+    } else {
+      const nextBuggy = existing.buggy ? 0 : 1;
+      await e.DB.prepare("UPDATE game_flags SET buggy = ?, updated_at = ? WHERE game_id = ?").bind(nextBuggy, now, gameId).run();
+    }
+  } else if (action === "set_buggy") {
+    const gameId = clean(b?.gameId || b?.id, 120);
+    const val = b?.buggy ? 1 : 0;
+    if (!gameId) return fail(r, "gameId is required", 422);
+    await e.DB.prepare(
+      "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 0, ?, ?) ON CONFLICT(game_id) DO UPDATE SET buggy = excluded.buggy, updated_at = excluded.updated_at"
+    ).bind(gameId, val, now).run();
+  } else if (action === "clear_buggy") {
+    await e.DB.prepare("UPDATE game_flags SET buggy = 0, updated_at = ?").bind(now).run();
+  } else if (action === "sync_all") {
+    if (Array.isArray(b?.verified)) {
+      await e.DB.prepare("UPDATE game_flags SET verified = 0, updated_at = ?").bind(now).run();
+      for (const gid of b.verified) {
+        const id = clean(gid, 120);
+        if (id) {
+          await e.DB.prepare(
+            "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 1, 0, ?) ON CONFLICT(game_id) DO UPDATE SET verified = 1, updated_at = excluded.updated_at"
+          ).bind(id, now).run();
+        }
+      }
+    }
+    if (Array.isArray(b?.buggy)) {
+      await e.DB.prepare("UPDATE game_flags SET buggy = 0, updated_at = ?").bind(now).run();
+      for (const gid of b.buggy) {
+        const id = clean(gid, 120);
+        if (id) {
+          await e.DB.prepare(
+            "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 0, 1, ?) ON CONFLICT(game_id) DO UPDATE SET buggy = 1, updated_at = excluded.updated_at"
+          ).bind(id, now).run();
+        }
+      }
+    }
+  }
+
+  // Fetch all active flags
+  const q = await e.DB.prepare(
+    "SELECT game_id, verified, buggy FROM game_flags WHERE verified = 1 OR buggy = 1"
+  ).all();
+  const verified = [];
+  const buggy = [];
+  for (const row of q.results || []) {
+    if (row.verified) verified.push(row.game_id);
+    if (row.buggy) buggy.push(row.game_id);
+  }
+  return json(r, { ok: true, verified, buggy });
+}
+
 export default {
   async fetch(r, e) {
     const p = new URL(r.url).pathname.replace(/\/+$/, "") || "/";
@@ -352,6 +479,8 @@ export default {
       if (p === "/api/admin/list") return admin(r, e);
       if (p === "/api/bugs") return bugs(r, e);
       if (p === "/api/admin/bugs") return adminBugs(r, e);
+      if (p === "/api/games/flags") return gameFlags(r, e);
+      if (p === "/api/admin/flags") return adminFlags(r, e);
       return fail(r, "No such endpoint.", 404);
     } catch {
       return fail(r, "The hub API is unavailable right now.", 500);

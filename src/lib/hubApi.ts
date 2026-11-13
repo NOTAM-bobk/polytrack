@@ -1,4 +1,5 @@
 const HUB_API = "/api/hub";
+const WORKER_ORIGIN = "https://polytrack-hub-api.sawyerbobk563.workers.dev";
 
 export interface HubMessage {
   id: string;
@@ -12,6 +13,11 @@ export interface GameStats {
   name: string;
   url: string;
   clicks: number;
+}
+
+export interface GameFlagsData {
+  verified: string[];
+  buggy: string[];
 }
 
 export async function loadMessages(): Promise<HubMessage[]> {
@@ -55,4 +61,118 @@ export async function recordGameClick(game: { id: string; name: string; url: str
   if (!response.ok) throw new Error("Game click could not be recorded");
   const data = await response.json();
   return data.game || null;
+}
+
+/**
+ * Loads game flags (verified and bug-tagged) from the Cloudflare backend.
+ * Public endpoint, available to all visitors and devices.
+ */
+export async function loadGameFlags(): Promise<GameFlagsData> {
+  // 1. Try same-origin rewritten path
+  try {
+    const res = await fetch(`${HUB_API}/games/flags`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        verified: Array.isArray(data.verified) ? data.verified : [],
+        buggy: Array.isArray(data.buggy) ? data.buggy : [],
+      };
+    }
+  } catch {}
+
+  // 2. Fallback directly to Cloudflare Worker
+  try {
+    const directRes = await fetch(`${WORKER_ORIGIN}/api/games/flags`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (directRes.ok) {
+      const data = await directRes.json();
+      return {
+        verified: Array.isArray(data.verified) ? data.verified : [],
+        buggy: Array.isArray(data.buggy) ? data.buggy : [],
+      };
+    }
+  } catch {}
+
+  return { verified: [], buggy: [] };
+}
+
+/**
+ * Updates game flags (verified or bug-tagged) on the Cloudflare backend.
+ * Protected by admin password.
+ */
+export async function updateAdminGameFlags(
+  pwd: string,
+  payload: {
+    action: "toggle_verified" | "set_verified" | "clear_verified" | "toggle_buggy" | "set_buggy" | "clear_buggy" | "sync_all" | "get";
+    gameId?: string;
+    verified?: boolean | string[];
+    buggy?: boolean | string[];
+  }
+): Promise<GameFlagsData> {
+  const reqBody = { ...payload, target: "flags", password: pwd };
+
+  // 1. Try Vercel /api/admin function
+  let res: Response | null = null;
+  try {
+    res = await fetch("/api/admin", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Password": pwd,
+      },
+      body: JSON.stringify(reqBody),
+    });
+  } catch {
+    res = null;
+  }
+
+  // 2. Fallback to /api/hub/admin/flags
+  if (!res || res.status === 404 || !res.ok) {
+    try {
+      const directHubRes = await fetch(`${HUB_API}/admin/flags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Password": pwd,
+        },
+        body: JSON.stringify(reqBody),
+      });
+      if (directHubRes.ok) {
+        res = directHubRes;
+      }
+    } catch {}
+  }
+
+  // 3. Fallback direct to Cloudflare Worker
+  if (!res || res.status === 404 || !res.ok) {
+    try {
+      const directWorkerRes = await fetch(`${WORKER_ORIGIN}/api/admin/flags`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Password": pwd,
+        },
+        body: JSON.stringify(reqBody),
+      });
+      if (directWorkerRes.ok) {
+        res = directWorkerRes;
+      }
+    } catch {}
+  }
+
+  if (!res || !res.ok) {
+    const errData = res ? await res.json().catch(() => ({})) : {};
+    throw new Error(errData.error || "Failed to update flags on Cloudflare backend");
+  }
+
+  const data = await res.json();
+  return {
+    verified: Array.isArray(data.verified) ? data.verified : [],
+    buggy: Array.isArray(data.buggy) ? data.buggy : [],
+  };
 }

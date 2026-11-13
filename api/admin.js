@@ -105,7 +105,17 @@ module.exports = async function handler(req, res) {
   recordAttempt(clientIp, true);
 
   try {
-    const upstreamUrl = new URL("/api/admin/bugs", WORKER_ORIGIN);
+    const isFlagsAction =
+      body.target === "flags" ||
+      req.url.includes("flags") ||
+      (typeof body.action === "string" && (
+        body.action.includes("verified") ||
+        body.action.includes("buggy") ||
+        body.action.includes("flag")
+      ));
+
+    const endpoint = isFlagsAction ? "/api/admin/flags" : "/api/admin/bugs";
+    const upstreamUrl = new URL(endpoint, WORKER_ORIGIN);
     const upstreamRes = await fetch(upstreamUrl.toString(), {
       method: "POST",
       headers: {

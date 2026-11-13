@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star, Bug, CheckCircle2 } from "lucide-react";
-import { loadBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
-import { loadVerifiedGameIds, onVerifiedGamesChange } from "@/lib/verifiedGames";
-import { loadGameStats, recordGameClick } from "@/lib/hubApi";
+import { loadBuggyGameIds, onBuggyGamesChange, saveBuggyGameIds } from "@/lib/buggyGames";
+import { loadVerifiedGameIds, onVerifiedGamesChange, saveVerifiedGameIds } from "@/lib/verifiedGames";
+import { loadGameStats, recordGameClick, loadGameFlags } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
 const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
@@ -994,6 +994,25 @@ export function GameCatalog() {
 
   React.useEffect(() => {
     return onVerifiedGamesChange((updated) => setVerifiedIds(updated));
+  }, []);
+
+  // Fetch flags from Cloudflare backend so verified & bug tags show up on all devices
+  React.useEffect(() => {
+    let active = true;
+    loadGameFlags()
+      .then((flags) => {
+        if (!active) return;
+        if (flags.verified.length > 0 || flags.buggy.length > 0) {
+          saveVerifiedGameIds(flags.verified);
+          saveBuggyGameIds(flags.buggy);
+          setVerifiedIds(new Set(flags.verified));
+          setBuggyIds(new Set(flags.buggy));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
   }, []);
 
   const toggleFavorite = React.useCallback((id: string, event?: React.MouseEvent) => {

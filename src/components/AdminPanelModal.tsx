@@ -22,6 +22,8 @@ import {
 import { DEFAULT_GAMES, type GameItem } from "./GameCatalog";
 import { loadBuggyGameIds, saveBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
 import { loadVerifiedGameIds, saveVerifiedGameIds, onVerifiedGamesChange } from "@/lib/verifiedGames";
+import { loadGameFlags, updateAdminGameFlags } from "@/lib/hubApi";
+import { Cloud, UploadCloud } from "lucide-react";
 
 interface AdminPanelModalProps {
   isOpen: boolean;
@@ -66,6 +68,8 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   const [verifiedIds, setVerifiedIds] = React.useState<Set<string>>(loadVerifiedGameIds);
   const [verifiedSearch, setVerifiedSearch] = React.useState("");
   const [verifiedFilter, setVerifiedFilter] = React.useState<"all" | "verified" | "unverified">("all");
+  const [syncingCloudflare, setSyncingCloudflare] = React.useState(false);
+  const [cloudflareNotice, setCloudflareNotice] = React.useState<string | null>(null);
   const [buggyIds, setBuggyIds] = React.useState<Set<string>>(loadBuggyGameIds);
   const [gameSearch, setGameSearch] = React.useState("");
   const [gameFilter, setGameFilter] = React.useState<"all" | "flagged" | "clean">("all");
@@ -174,6 +178,19 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
       setBugs(Array.isArray(data.bugs) ? data.bugs : (Array.isArray(data.items) ? data.items : []));
       setIsAuthenticated(true);
       sessionStorage.setItem("polytrack_admin_session_pwd", pwd);
+
+      // Also sync latest game flags from Cloudflare backend
+      loadGameFlags()
+        .then((flags) => {
+          if (flags.verified.length > 0 || flags.buggy.length > 0) {
+            setVerifiedIds(new Set(flags.verified));
+            setBuggyIds(new Set(flags.buggy));
+            saveVerifiedGameIds(flags.verified);
+            saveBuggyGameIds(flags.buggy);
+          }
+        })
+        .catch(() => {});
+
       return true;
     } catch {
       setErrorMessage("Network error while connecting to admin API.");
@@ -248,42 +265,143 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     setErrorMessage("");
   };
 
-  const handleToggleBugTag = (gameId: string) => {
+  const handleToggleBugTag = async (gameId: string) => {
+    let willFlag = false;
     setBuggyIds((prev) => {
       const next = new Set(prev);
       if (next.has(gameId)) {
         next.delete(gameId);
+        willFlag = false;
       } else {
         next.add(gameId);
+        willFlag = true;
       }
       saveBuggyGameIds(next);
       return next;
     });
+
+    if (password) {
+      setSyncingCloudflare(true);
+      try {
+        const res = await updateAdminGameFlags(password, {
+          action: "set_buggy",
+          gameId,
+          buggy: willFlag,
+        });
+        setBuggyIds(new Set(res.buggy));
+        saveBuggyGameIds(res.buggy);
+        setCloudflareNotice("Saved to Cloudflare");
+        setTimeout(() => setCloudflareNotice(null), 2500);
+      } catch (err: any) {
+        console.warn("Cloudflare sync failed:", err);
+        setCloudflareNotice("Saved locally (Cloudflare sync failed)");
+        setTimeout(() => setCloudflareNotice(null), 3000);
+      } finally {
+        setSyncingCloudflare(false);
+      }
+    }
   };
 
-  const handleClearAllBugTags = () => {
-    if (!window.confirm("Remove the 'error:bug' tag from all games?")) return;
+  const handleClearAllBugTags = async () => {
+    if (!window.confirm("Remove the 'error:bug' tag from all games on all devices?")) return;
     saveBuggyGameIds([]);
     setBuggyIds(new Set());
+
+    if (password) {
+      setSyncingCloudflare(true);
+      try {
+        const res = await updateAdminGameFlags(password, { action: "clear_buggy" });
+        setBuggyIds(new Set(res.buggy));
+        saveBuggyGameIds(res.buggy);
+        setCloudflareNotice("Cleared on Cloudflare");
+        setTimeout(() => setCloudflareNotice(null), 2500);
+      } catch (err: any) {
+        console.warn("Cloudflare clear failed:", err);
+      } finally {
+        setSyncingCloudflare(false);
+      }
+    }
   };
 
-  const handleToggleVerified = (gameId: string) => {
+  const handleToggleVerified = async (gameId: string) => {
+    let willVerify = false;
     setVerifiedIds((prev) => {
       const next = new Set(prev);
       if (next.has(gameId)) {
         next.delete(gameId);
+        willVerify = false;
       } else {
         next.add(gameId);
+        willVerify = true;
       }
       saveVerifiedGameIds(next);
       return next;
     });
+
+    if (password) {
+      setSyncingCloudflare(true);
+      try {
+        const res = await updateAdminGameFlags(password, {
+          action: "set_verified",
+          gameId,
+          verified: willVerify,
+        });
+        setVerifiedIds(new Set(res.verified));
+        saveVerifiedGameIds(res.verified);
+        setCloudflareNotice("Saved to Cloudflare");
+        setTimeout(() => setCloudflareNotice(null), 2500);
+      } catch (err: any) {
+        console.warn("Cloudflare sync failed:", err);
+        setCloudflareNotice("Saved locally (Cloudflare sync failed)");
+        setTimeout(() => setCloudflareNotice(null), 3000);
+      } finally {
+        setSyncingCloudflare(false);
+      }
+    }
   };
 
-  const handleClearAllVerified = () => {
-    if (!window.confirm("Remove Verified status from all games?")) return;
+  const handleClearAllVerified = async () => {
+    if (!window.confirm("Remove Verified status from all games on all devices?")) return;
     saveVerifiedGameIds([]);
     setVerifiedIds(new Set());
+
+    if (password) {
+      setSyncingCloudflare(true);
+      try {
+        const res = await updateAdminGameFlags(password, { action: "clear_verified" });
+        setVerifiedIds(new Set(res.verified));
+        saveVerifiedGameIds(res.verified);
+        setCloudflareNotice("Cleared on Cloudflare");
+        setTimeout(() => setCloudflareNotice(null), 2500);
+      } catch (err: any) {
+        console.warn("Cloudflare clear failed:", err);
+      } finally {
+        setSyncingCloudflare(false);
+      }
+    }
+  };
+
+  const handlePushAllToCloudflare = async () => {
+    if (!password) return;
+    setSyncingCloudflare(true);
+    try {
+      const res = await updateAdminGameFlags(password, {
+        action: "sync_all",
+        verified: Array.from(verifiedIds),
+        buggy: Array.from(buggyIds),
+      });
+      setVerifiedIds(new Set(res.verified));
+      setBuggyIds(new Set(res.buggy));
+      saveVerifiedGameIds(res.verified);
+      saveBuggyGameIds(res.buggy);
+      setCloudflareNotice("Synced all games to Cloudflare!");
+      setTimeout(() => setCloudflareNotice(null), 3000);
+    } catch (err: any) {
+      setCloudflareNotice(err?.message || "Sync to Cloudflare failed");
+      setTimeout(() => setCloudflareNotice(null), 3500);
+    } finally {
+      setSyncingCloudflare(false);
+    }
   };
 
   const handleUpdateStatus = async (id: number, nextStatus: "open" | "resolved") => {
@@ -551,8 +669,9 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
         ) : (
           /* Unlocked Admin View with Tabs */
           <div className="flex flex-col gap-3 min-h-0 flex-1">
-            {/* Main Tabs Navigation */}
-            <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2 flex-wrap">
+            {/* Main Tabs Navigation & Cloudflare Sync Status */}
+            <div className="flex items-center justify-between gap-2 border-b border-white/[0.08] pb-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setAdminTab("verified")}
@@ -607,6 +726,32 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
                   </span>
                 )}
               </button>
+              </div>
+
+              {/* Cloudflare Sync Badge & Push Button */}
+              <div className="flex items-center gap-2">
+                {cloudflareNotice && (
+                  <span className="text-[11px] font-medium text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-md animate-fade-in">
+                    {cloudflareNotice}
+                  </span>
+                )}
+                {syncingCloudflare ? (
+                  <span className="text-[11px] text-zinc-400 flex items-center gap-1.5">
+                    <Loader2 className="w-3 h-3 animate-spin text-emerald-400" />
+                    <span>Saving to Cloudflare…</span>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePushAllToCloudflare}
+                    title="Push all verified & bug selections to Cloudflare backend so they appear on other devices"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                  >
+                    <Cloud className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Sync to Cloudflare</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* TAB 0: Verified Games Selector */}
