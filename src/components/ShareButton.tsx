@@ -38,7 +38,7 @@ const CHIP_STYLE: React.CSSProperties = {
   boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
 };
 
-export function ShareButton() {
+export function ShareButton({ compact = false }: { compact?: boolean }) {
   const [state, setState] = React.useState<ShareState>("idle");
   const resetTimer = React.useRef<number | null>(null);
 
@@ -88,7 +88,7 @@ export function ShareButton() {
         title="Share this page"
         aria-label="Share this page"
         style={CHIP_STYLE}
-        className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98] cursor-pointer"
+        className={`inline-flex items-center gap-1.5 text-xs font-medium text-zinc-300 hover:text-white hover:bg-white/[0.08] transition-all whitespace-nowrap active:scale-[0.98] cursor-pointer ${compact ? "h-8 w-8 justify-center rounded-full p-0 sm:h-auto sm:w-auto sm:justify-start sm:rounded-none sm:px-3 sm:py-1" : "px-3 py-1"}`}
       >
         {done ? <Check className="w-3.5 h-3.5 text-amber-300" /> : <Share2 className="w-3.5 h-3.5 text-zinc-400" />}
         <span className="hidden sm:inline">{LABELS[state]}</span>

@@ -1,12 +1,15 @@
 import * as React from "react";
 import { X, Lock, ShieldAlert, Check, Key, ShieldCheck, Eye, EyeOff, BellOff } from "lucide-react";
 import { areNotificationAdsBlocked, setNotificationAdsBlocked } from "@/lib/adNotifications";
+import type { TabCloakSettings } from "@/lib/tabCloak";
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLockNow: () => void;
   onConfigChange?: (enabled: boolean, password: string) => void;
+  tabCloakSettings: TabCloakSettings;
+  onTabCloakChange: (settings: TabCloakSettings) => void;
 }
 
 const PANIC_PRESETS = [
@@ -37,7 +40,9 @@ export function SettingsModal({
   isOpen,
   onClose,
   onLockNow,
-  onConfigChange
+  onConfigChange,
+  tabCloakSettings,
+  onTabCloakChange
 }: SettingsModalProps) {
   // Site Lock states
   const [siteLockEnabled, setSiteLockEnabled] = React.useState(() => {
@@ -59,6 +64,19 @@ export function SettingsModal({
   });
   const [customPanicInput, setCustomPanicInput] = React.useState(panicUrl);
   const [panicSaved, setPanicSaved] = React.useState(false);
+  const [tabCloakEnabled, setTabCloakEnabled] = React.useState(tabCloakSettings.enabled);
+  const [tabTitle, setTabTitle] = React.useState(tabCloakSettings.title);
+  const [tabIconUrl, setTabIconUrl] = React.useState(tabCloakSettings.iconUrl);
+  const [customTabIcon, setCustomTabIcon] = React.useState(tabCloakSettings.customIcon);
+  const [tabCloakSaved, setTabCloakSaved] = React.useState(false);
+  const [tabCloakError, setTabCloakError] = React.useState("");
+
+  React.useEffect(() => {
+    setTabCloakEnabled(tabCloakSettings.enabled);
+    setTabTitle(tabCloakSettings.title);
+    setTabIconUrl(tabCloakSettings.iconUrl);
+    setCustomTabIcon(tabCloakSettings.customIcon);
+  }, [tabCloakSettings]);
 
   const panelRef = React.useRef<HTMLDivElement>(null);
 
@@ -140,6 +158,36 @@ export function SettingsModal({
     const next = !adsBlocked;
     setAdsBlocked(next);
     setNotificationAdsBlocked(next);
+  };
+
+  const handleSaveTabCloak = (event: React.FormEvent) => {
+    event.preventDefault();
+    const cleanTitle = tabTitle.trim();
+    const cleanIconUrl = tabIconUrl.trim();
+    if (tabCloakEnabled && !cleanTitle) {
+      setTabCloakError("Enter a tab name before enabling custom tab cloaking.");
+      return;
+    }
+    if (tabCloakEnabled && customTabIcon && !cleanIconUrl) {
+      setTabCloakError("Enter an icon URL or select Default icon.");
+      return;
+    }
+    if (cleanIconUrl) {
+      try {
+        const parsed = new URL(cleanIconUrl, window.location.href);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          throw new Error("unsupported protocol");
+        }
+      } catch {
+        setTabCloakError("Enter a valid http or https icon URL.");
+        return;
+      }
+    }
+    setTabCloakError("");
+    const settings = { enabled: tabCloakEnabled, title: cleanTitle, iconUrl: cleanIconUrl, customIcon: customTabIcon };
+    onTabCloakChange(settings);
+    setTabCloakSaved(true);
+    window.setTimeout(() => setTabCloakSaved(false), 2200);
   };
 
   const handleSavePanicUrl = (url: string) => {
@@ -423,7 +471,102 @@ export function SettingsModal({
           )}
         </div>
 
-        {/* Section 3: Emergency Panic Redirect */}
+        {/* Section 3: Custom tab cloaking */}
+        <section className="flex flex-col gap-3 border-t border-white/[0.08] pt-3" aria-labelledby="tab-cloak-title">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 id="tab-cloak-title" className="text-sm font-semibold text-zinc-100">
+                Custom tab cloaking
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-400">
+                Change the name and icon shown in this browser tab.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label="Enable custom tab cloaking"
+              aria-checked={tabCloakEnabled}
+              onClick={() => setTabCloakEnabled((enabled) => !enabled)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors ${tabCloakEnabled ? "bg-emerald-600" : "bg-zinc-700"}`}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${tabCloakEnabled ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSaveTabCloak} className="flex flex-col gap-3 rounded-xl bg-black/25 p-3 ring-1 ring-inset ring-white/[0.05]">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="tab-cloak-title-input" className="text-[11px] font-medium text-zinc-400">
+                Tab name
+              </label>
+              <input
+                id="tab-cloak-title-input"
+                type="text"
+                value={tabTitle}
+                onChange={(event) => setTabTitle(event.target.value)}
+                placeholder="For example, Google Classroom…"
+                maxLength={80}
+                autoComplete="off"
+                spellCheck={false}
+                className="w-full rounded-lg bg-white/[0.04] px-3 py-2 text-xs text-zinc-100 ring-1 ring-inset ring-white/[0.08] placeholder:text-zinc-500 focus:outline-none"
+              />
+            </div>
+
+            <fieldset className="flex flex-col gap-1.5">
+              <legend className="text-[11px] font-medium text-zinc-400">Tab icon</legend>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  aria-pressed={!customTabIcon}
+                  onClick={() => {
+                    setCustomTabIcon(false);
+                    setTabCloakError("");
+                  }}
+                  className={`rounded-lg px-3 py-2 text-left text-xs ring-1 ring-inset transition-colors ${!customTabIcon ? "bg-white/[0.1] text-white ring-white/20" : "bg-white/[0.03] text-zinc-400 ring-white/[0.06] hover:text-white"}`}
+                >
+                  Default icon
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={customTabIcon}
+                  onClick={() => setCustomTabIcon(true)}
+                  className={`rounded-lg px-3 py-2 text-left text-xs ring-1 ring-inset transition-colors ${customTabIcon ? "bg-white/[0.1] text-white ring-white/20" : "bg-white/[0.03] text-zinc-400 ring-white/[0.06] hover:text-white"}`}
+                >
+                  Custom icon URL
+                </button>
+              </div>
+              {customTabIcon && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="tab-cloak-icon-url" className="sr-only">Custom tab icon URL</label>
+                  <input
+                    id="tab-cloak-icon-url"
+                    type="url"
+                    inputMode="url"
+                    value={tabIconUrl}
+                    onChange={(event) => setTabIconUrl(event.target.value)}
+                    placeholder="https://example.com/favicon.ico…"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="w-full rounded-lg bg-white/[0.04] px-3 py-2 font-mono text-xs text-zinc-100 ring-1 ring-inset ring-white/[0.08] placeholder:text-zinc-500 focus:outline-none"
+                  />
+                  {!tabIconUrl.trim() && tabCloakEnabled && (
+                    <p className="text-[10px] leading-relaxed text-amber-200/80">Add an icon URL or select Default icon.</p>
+                  )}
+                </div>
+              )}
+            </fieldset>
+
+            {tabCloakError && <p role="alert" className="text-xs font-medium text-red-400">{tabCloakError}</p>}
+            <div className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-2">
+              <p className="text-[10px] leading-relaxed text-zinc-500">Applies to this browser only.</p>
+              <button type="submit" className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-zinc-950 transition-colors hover:bg-zinc-100">
+                {tabCloakSaved ? "Saved" : "Save tab"}
+              </button>
+            </div>
+          </form>
+        </section>
+
+        {/* Section 4: Emergency Panic Redirect */}
         <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-3">
           <div className="flex items-center gap-2">
             <div

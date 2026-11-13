@@ -8,6 +8,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { SiteLock } from "./components/SiteLock";
 import { HalftoneHorizon } from "./components/ui/halftone-horizon";
 import { Compass, Send, Sparkles, Settings, Gamepad2, MessageCircle } from "lucide-react";
+import { applyTabCloak, loadTabCloakSettings, saveTabCloakSettings, type TabCloakSettings } from "./lib/tabCloak";
 
 const CHIP_STYLE: React.CSSProperties = {
   borderRadius: 36,
@@ -19,6 +20,16 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [mobilePanel, setMobilePanel] = React.useState<"games" | "chat">("games");
   const [isUnlocked, setIsUnlocked] = React.useState(false);
+  const [tabCloakSettings, setTabCloakSettings] = React.useState<TabCloakSettings>(loadTabCloakSettings);
+
+  React.useEffect(() => {
+    applyTabCloak(tabCloakSettings);
+  }, [tabCloakSettings]);
+
+  const handleTabCloakChange = (settings: TabCloakSettings) => {
+    saveTabCloakSettings(settings);
+    setTabCloakSettings(settings);
+  };
 
   const [siteLockEnabled, setSiteLockEnabled] = React.useState(() => {
     return localStorage.getItem("polytrack_site_lock_enabled") === "true";
@@ -54,7 +65,7 @@ export function App() {
         {/* 3D Top Navigation Bar */}
         <header className="px-2.5 sm:px-4 pt-2.5 sm:pt-3 shrink-0 z-20">
           <div
-            className="solid-3d-panel flex w-full flex-wrap items-center gap-2 px-3 py-2 sm:flex-nowrap sm:gap-4 sm:px-4"
+            className="solid-3d-panel flex w-full flex-nowrap items-center justify-end gap-1.5 px-2.5 py-1 sm:justify-start sm:gap-4 sm:px-4 sm:py-2"
             style={{
               background: "#1d1d1d",
               borderRadius: 20,
@@ -78,15 +89,16 @@ export function App() {
 
             <nav
               aria-label="Site"
-              className="no-scrollbar order-3 flex w-full min-w-0 items-center gap-1.5 overflow-x-auto py-0.5 sm:order-2 sm:w-auto sm:flex-1"
+              className="no-scrollbar order-1 flex min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto py-0.5 sm:order-2 sm:justify-start sm:gap-1.5"
             >
               <a
                 href="/submit/"
                 aria-label="Submit a game"
                 style={CHIP_STYLE}
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+                title="Submit a game"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-1"
               >
-                <Send aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <Send aria-hidden="true" className="h-4 w-4 text-zinc-400 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Submit a game</span>
               </a>
               <a
@@ -96,9 +108,9 @@ export function App() {
                 title="Open Unblocked AIs in a new tab"
                 aria-label="Unblocked AIs (opens in a new tab)"
                 style={CHIP_STYLE}
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-1"
               >
-                <Sparkles aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <Sparkles aria-hidden="true" className="h-4 w-4 text-zinc-400 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Unblocked AIs</span>
               </a>
               <a
@@ -108,15 +120,15 @@ export function App() {
                 title="Open outside games in a new tab"
                 aria-label="Outside games (opens in a new tab)"
                 style={CHIP_STYLE}
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full p-0 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3 sm:py-1"
               >
-                <Compass aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <Compass aria-hidden="true" className="h-4 w-4 text-zinc-400 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Outside games</span>
               </a>
-              <ShareButton />
+              <ShareButton compact />
             </nav>
 
-            <div className="order-2 ml-auto flex shrink-0 items-center gap-1.5 sm:order-3 sm:gap-2">
+            <div className="order-2 ml-0 flex shrink-0 items-center gap-1 sm:ml-auto sm:gap-2">
               <button
                 type="button"
                 onClick={() => setSettingsOpen(true)}
@@ -125,12 +137,12 @@ export function App() {
                 aria-haspopup="dialog"
                 aria-expanded={settingsOpen}
                 style={CHIP_STYLE}
-                className="inline-flex cursor-pointer items-center gap-1.5 px-3 py-1 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] whitespace-nowrap"
+                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full p-0 text-xs font-medium text-zinc-300 transition-colors hover:bg-white/[0.08] hover:text-white active:scale-[0.98] sm:h-auto sm:w-auto sm:gap-1.5 sm:rounded-none sm:px-3 sm:py-1"
               >
-                <Settings aria-hidden="true" className="w-3.5 h-3.5 text-zinc-400" />
+                <Settings aria-hidden="true" className="h-4 w-4 text-zinc-400 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden md:inline">Settings</span>
               </button>
-              <PanicButton />
+              <PanicButton compact />
             </div>
           </div>
         </header>
@@ -168,9 +180,9 @@ export function App() {
 
         <nav
           aria-label="Mobile navigation"
-          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center border-t border-white/[0.08] bg-zinc-950/95 px-4 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md md:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center bg-gradient-to-t from-zinc-950/95 via-zinc-950/65 to-transparent px-4 pt-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:hidden"
         >
-          <div className="flex w-full max-w-sm items-center gap-2 rounded-2xl border border-white/[0.08] bg-[#1d1d1d] p-1.5 shadow-[0_8px_28px_rgba(0,0,0,0.5)]">
+          <div className="flex w-full max-w-sm items-center gap-1 rounded-2xl border border-white/[0.06] bg-[#171717]/90 p-1.5 shadow-[0_8px_28px_rgba(0,0,0,0.38)] backdrop-blur-xl">
             <button
               type="button"
               onClick={() => setMobilePanel("games")}
@@ -178,8 +190,8 @@ export function App() {
               aria-pressed={mobilePanel === "games"}
               className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                 mobilePanel === "games"
-                  ? "bg-white text-zinc-950"
-                  : "text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100"
+                  ? "bg-white/[0.09] text-zinc-100 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                  : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
               }`}
             >
               <Gamepad2 aria-hidden="true" className="h-4 w-4" />
@@ -192,8 +204,8 @@ export function App() {
               aria-pressed={mobilePanel === "chat"}
               className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                 mobilePanel === "chat"
-                  ? "bg-white text-zinc-950"
-                  : "text-zinc-400 hover:bg-white/[0.06] hover:text-zinc-100"
+                  ? "bg-white/[0.09] text-zinc-100 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                  : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
               }`}
             >
               <MessageCircle aria-hidden="true" className="h-4 w-4" />
@@ -226,6 +238,8 @@ export function App() {
         onClose={() => setSettingsOpen(false)}
         onLockNow={() => setIsUnlocked(false)}
         onConfigChange={handleConfigChange}
+        tabCloakSettings={tabCloakSettings}
+        onTabCloakChange={handleTabCloakChange}
       />
     </HalftoneHorizon>
   );

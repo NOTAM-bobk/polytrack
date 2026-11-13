@@ -191,6 +191,13 @@ export const DEFAULT_GAMES: GameItem[] = [
     tags: ["Driving", "Stunts", "Racing", "Arcade"]
   },
   {
+    id: "game-slope",
+    name: "Slope",
+    url: "https://slope.benlaunches.icu/",
+    description: "Guide a ball down a fast, winding 3D slope and dodge obstacles for as long as you can.",
+    tags: ["Arcade", "3D", "Skill", "Reflex"]
+  },
+  {
     id: "game-drift-boss",
     name: "Drift Boss",
     url: "/games/drift-boss.html",
