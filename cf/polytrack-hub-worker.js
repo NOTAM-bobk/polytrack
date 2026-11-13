@@ -81,15 +81,23 @@ function schema(e) {
         "CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL DEFAULT 1,first_seen INTEGER NOT NULL,last_seen INTEGER NOT NULL)"
       ),
       e.DB.prepare(
-        "CREATE TABLE IF NOT EXISTS game_flags(game_id TEXT PRIMARY KEY,verified INTEGER NOT NULL DEFAULT 0,buggy INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL)"
+        "CREATE TABLE IF NOT EXISTS game_flags(game_id TEXT PRIMARY KEY,verified INTEGER NOT NULL DEFAULT 0,buggy INTEGER NOT NULL DEFAULT 0,not_mobile INTEGER NOT NULL DEFAULT 0,updated_at TEXT NOT NULL)"
       ),
       e.DB.prepare(
         "CREATE TABLE IF NOT EXISTS admin_settings(key TEXT PRIMARY KEY,value TEXT NOT NULL,updated_at TEXT NOT NULL)"
       ),
-    ]).catch((x) => {
-      ready = null;
-      return Promise.reject(x);
-    });
+    ])
+      // Deployments created before the "not mobile optimized" tag have a game_flags
+      // table without its column, so add it once instead of failing every flag read.
+      .then(async () => {
+        try {
+          await e.DB.prepare("ALTER TABLE game_flags ADD COLUMN not_mobile INTEGER NOT NULL DEFAULT 0").run();
+        } catch {}
+      })
+      .catch((x) => {
+        ready = null;
+        return Promise.reject(x);
+      });
   }
   return ready;
 }
@@ -342,22 +350,24 @@ async function adminBugs(r, e) {
 }
 
 
-// GAME FLAGS (VERIFIED & BUG-TAGGED)
+// GAME FLAGS (VERIFIED, BUG-TAGGED & NOT MOBILE OPTIMIZED)
 async function gameFlags(r, e) {
   if (r.method === "GET") {
     try {
       const q = await e.DB.prepare(
-        "SELECT game_id, verified, buggy FROM game_flags WHERE verified = 1 OR buggy = 1"
+        "SELECT game_id, verified, buggy, not_mobile FROM game_flags WHERE verified = 1 OR buggy = 1 OR not_mobile = 1"
       ).all();
       const verified = [];
       const buggy = [];
+      const notMobile = [];
       for (const row of q.results || []) {
         if (row.verified) verified.push(row.game_id);
         if (row.buggy) buggy.push(row.game_id);
+        if (row.not_mobile) notMobile.push(row.game_id);
       }
-      return json(r, { ok: true, verified, buggy });
+      return json(r, { ok: true, verified, buggy, notMobile });
     } catch {
-      return json(r, { ok: true, verified: [], buggy: [] });
+      return json(r, { ok: true, verified: [], buggy: [], notMobile: [] });
     }
   }
   return fail(r, "Use GET for game flags.", 405);
@@ -391,7 +401,7 @@ async function adminFlags(r, e) {
     if (!gameId) return fail(r, "gameId is required", 422);
     const existing = await e.DB.prepare("SELECT verified FROM game_flags WHERE game_id = ?").bind(gameId).first();
     if (!existing) {
-      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 1, 0, ?)").bind(gameId, now).run();
+      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 1, 0, 0, ?)").bind(gameId, now).run();
     } else {
       const nextVer = existing.verified ? 0 : 1;
       await e.DB.prepare("UPDATE game_flags SET verified = ?, updated_at = ? WHERE game_id = ?").bind(nextVer, now, gameId).run();
@@ -401,7 +411,7 @@ async function adminFlags(r, e) {
     const val = b?.verified ? 1 : 0;
     if (!gameId) return fail(r, "gameId is required", 422);
     await e.DB.prepare(
-      "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, ?, 0, ?) ON CONFLICT(game_id) DO UPDATE SET verified = excluded.verified, updated_at = excluded.updated_at"
+      "INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, ?, 0, 0, ?) ON CONFLICT(game_id) DO UPDATE SET verified = excluded.verified, updated_at = excluded.updated_at"
     ).bind(gameId, val, now).run();
   } else if (action === "clear_verified") {
     await e.DB.prepare("UPDATE game_flags SET verified = 0, updated_at = ?").bind(now).run();
@@ -410,7 +420,7 @@ async function adminFlags(r, e) {
     if (!gameId) return fail(r, "gameId is required", 422);
     const existing = await e.DB.prepare("SELECT buggy FROM game_flags WHERE game_id = ?").bind(gameId).first();
     if (!existing) {
-      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 0, 1, ?)").bind(gameId, now).run();
+      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 0, 1, 0, ?)").bind(gameId, now).run();
     } else {
       const nextBuggy = existing.buggy ? 0 : 1;
       await e.DB.prepare("UPDATE game_flags SET buggy = ?, updated_at = ? WHERE game_id = ?").bind(nextBuggy, now, gameId).run();
@@ -420,10 +430,29 @@ async function adminFlags(r, e) {
     const val = b?.buggy ? 1 : 0;
     if (!gameId) return fail(r, "gameId is required", 422);
     await e.DB.prepare(
-      "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 0, ?, ?) ON CONFLICT(game_id) DO UPDATE SET buggy = excluded.buggy, updated_at = excluded.updated_at"
+      "INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 0, ?, 0, ?) ON CONFLICT(game_id) DO UPDATE SET buggy = excluded.buggy, updated_at = excluded.updated_at"
     ).bind(gameId, val, now).run();
   } else if (action === "clear_buggy") {
     await e.DB.prepare("UPDATE game_flags SET buggy = 0, updated_at = ?").bind(now).run();
+  } else if (action === "toggle_not_mobile") {
+    const gameId = clean(b?.gameId || b?.id, 120);
+    if (!gameId) return fail(r, "gameId is required", 422);
+    const existing = await e.DB.prepare("SELECT not_mobile FROM game_flags WHERE game_id = ?").bind(gameId).first();
+    if (!existing) {
+      await e.DB.prepare("INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 0, 0, 1, ?)").bind(gameId, now).run();
+    } else {
+      const nextNotMobile = existing.not_mobile ? 0 : 1;
+      await e.DB.prepare("UPDATE game_flags SET not_mobile = ?, updated_at = ? WHERE game_id = ?").bind(nextNotMobile, now, gameId).run();
+    }
+  } else if (action === "set_not_mobile") {
+    const gameId = clean(b?.gameId || b?.id, 120);
+    const val = b?.notMobile ? 1 : 0;
+    if (!gameId) return fail(r, "gameId is required", 422);
+    await e.DB.prepare(
+      "INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 0, 0, ?, ?) ON CONFLICT(game_id) DO UPDATE SET not_mobile = excluded.not_mobile, updated_at = excluded.updated_at"
+    ).bind(gameId, val, now).run();
+  } else if (action === "clear_not_mobile") {
+    await e.DB.prepare("UPDATE game_flags SET not_mobile = 0, updated_at = ?").bind(now).run();
   } else if (action === "sync_all") {
     if (Array.isArray(b?.verified)) {
       await e.DB.prepare("UPDATE game_flags SET verified = 0, updated_at = ?").bind(now).run();
@@ -431,7 +460,7 @@ async function adminFlags(r, e) {
         const id = clean(gid, 120);
         if (id) {
           await e.DB.prepare(
-            "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 1, 0, ?) ON CONFLICT(game_id) DO UPDATE SET verified = 1, updated_at = excluded.updated_at"
+            "INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 1, 0, 0, ?) ON CONFLICT(game_id) DO UPDATE SET verified = 1, updated_at = excluded.updated_at"
           ).bind(id, now).run();
         }
       }
@@ -442,7 +471,18 @@ async function adminFlags(r, e) {
         const id = clean(gid, 120);
         if (id) {
           await e.DB.prepare(
-            "INSERT INTO game_flags (game_id, verified, buggy, updated_at) VALUES (?, 0, 1, ?) ON CONFLICT(game_id) DO UPDATE SET buggy = 1, updated_at = excluded.updated_at"
+            "INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 0, 1, 0, ?) ON CONFLICT(game_id) DO UPDATE SET buggy = 1, updated_at = excluded.updated_at"
+          ).bind(id, now).run();
+        }
+      }
+    }
+    if (Array.isArray(b?.notMobile)) {
+      await e.DB.prepare("UPDATE game_flags SET not_mobile = 0, updated_at = ?").bind(now).run();
+      for (const gid of b.notMobile) {
+        const id = clean(gid, 120);
+        if (id) {
+          await e.DB.prepare(
+            "INSERT INTO game_flags (game_id, verified, buggy, not_mobile, updated_at) VALUES (?, 0, 0, 1, ?) ON CONFLICT(game_id) DO UPDATE SET not_mobile = 1, updated_at = excluded.updated_at"
           ).bind(id, now).run();
         }
       }
@@ -451,15 +491,17 @@ async function adminFlags(r, e) {
 
   // Fetch all active flags
   const q = await e.DB.prepare(
-    "SELECT game_id, verified, buggy FROM game_flags WHERE verified = 1 OR buggy = 1"
+    "SELECT game_id, verified, buggy, not_mobile FROM game_flags WHERE verified = 1 OR buggy = 1 OR not_mobile = 1"
   ).all();
   const verified = [];
   const buggy = [];
+  const notMobile = [];
   for (const row of q.results || []) {
     if (row.verified) verified.push(row.game_id);
     if (row.buggy) buggy.push(row.game_id);
+    if (row.not_mobile) notMobile.push(row.game_id);
   }
-  return json(r, { ok: true, verified, buggy });
+  return json(r, { ok: true, verified, buggy, notMobile });
 }
 
 export default {

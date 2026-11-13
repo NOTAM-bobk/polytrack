@@ -1,7 +1,8 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star, Bug, CheckCircle2 } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star, Bug, CheckCircle2, Smartphone } from "lucide-react";
 import { loadBuggyGameIds, onBuggyGamesChange, saveBuggyGameIds } from "@/lib/buggyGames";
 import { loadVerifiedGameIds, onVerifiedGamesChange, saveVerifiedGameIds } from "@/lib/verifiedGames";
+import { loadNotMobileGameIds, onNotMobileGamesChange, saveNotMobileGameIds } from "@/lib/notMobileGames";
 import { loadGameStats, recordGameClick, loadGameFlags } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
@@ -793,6 +794,7 @@ function GameCard({
   isFavorite,
   isBuggy,
   isVerified,
+  isNotMobile,
   searchQuery,
   onPlay,
   onToggleFavorite
@@ -803,6 +805,7 @@ function GameCard({
   isFavorite: boolean;
   isBuggy: boolean;
   isVerified: boolean;
+  isNotMobile: boolean;
   searchQuery: string;
   onPlay: (game: GameItem) => void;
   onToggleFavorite: (id: string, event?: React.MouseEvent) => void;
@@ -814,8 +817,8 @@ function GameCard({
         game.disabled ? "opacity-80" : ""
       }`}
     >
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="mb-2 flex items-start justify-between gap-2">
+      <div className="flex flex-1 flex-col p-3 sm:p-5">
+        <div className="mb-1.5 flex items-start justify-between gap-2 sm:mb-2">
           <h4 className="flex min-w-0 flex-wrap items-center gap-2 text-base font-semibold text-zinc-100">
             {game.disabled ? (
               <span className="truncate">
@@ -867,6 +870,21 @@ function GameCard({
               >
                 <Bug aria-hidden="true" className="h-3 w-3 text-red-400 shrink-0" />
                 <span>error:bug</span>
+              </span>
+            )}
+            {isNotMobile && (
+              <span
+                title="Not optimized for mobile — best played on desktop"
+                style={{
+                  ...CHIP_STYLE,
+                  background: "linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(180, 83, 9, 0.16))",
+                  border: "1px solid rgba(245, 158, 11, 0.4)",
+                  color: "#fcd34d"
+                }}
+                className="inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-[10.5px] font-semibold tracking-wide font-mono"
+              >
+                <Smartphone aria-hidden="true" className="h-3 w-3 text-amber-400 shrink-0" />
+                <span>no mobile</span>
               </span>
             )}
             {isRecent && (
@@ -922,17 +940,17 @@ function GameCard({
           </div>
         </div>
 
-        <p className="mb-4 line-clamp-2 flex-1 text-[13px] leading-[18px] text-[#8B9099]">
+        <p className="mb-2.5 line-clamp-2 flex-1 text-[12.5px] leading-[17px] text-[#8B9099] sm:mb-4 sm:text-[13px] sm:leading-[18px]">
           <HighlightText text={game.description} query={searchQuery} />
         </p>
 
-        <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
-          <div className="flex flex-wrap items-center gap-1.5">
+        <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/[0.06] pt-2.5 sm:gap-3 sm:pt-3">
+          <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-hidden sm:flex-wrap">
             {game.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
                 style={CHIP_STYLE}
-                className="inline-flex h-6 items-center px-2.5 text-[11px] leading-[14px] text-[#caccd2]"
+                className="inline-flex h-5 shrink-0 items-center px-2 text-[10.5px] leading-[13px] text-[#caccd2] sm:h-6 sm:px-2.5 sm:text-[11px] sm:leading-[14px]"
               >
                 <HighlightText text={tag} query={searchQuery} />
               </span>
@@ -996,7 +1014,13 @@ export function GameCatalog() {
     return onVerifiedGamesChange((updated) => setVerifiedIds(updated));
   }, []);
 
-  // Fetch flags from Cloudflare backend so verified & bug tags show up on all devices
+  const [notMobileIds, setNotMobileIds] = React.useState<Set<string>>(loadNotMobileGameIds);
+
+  React.useEffect(() => {
+    return onNotMobileGamesChange((updated) => setNotMobileIds(updated));
+  }, []);
+
+  // Fetch flags from Cloudflare backend so verified, bug & mobile tags show up on all devices
   React.useEffect(() => {
     let active = true;
     loadGameFlags()
@@ -1004,8 +1028,10 @@ export function GameCatalog() {
         if (!active) return;
         saveVerifiedGameIds(flags.verified);
         saveBuggyGameIds(flags.buggy);
+        saveNotMobileGameIds(flags.notMobile);
         setVerifiedIds(new Set(flags.verified));
         setBuggyIds(new Set(flags.buggy));
+        setNotMobileIds(new Set(flags.notMobile));
       })
       .catch(() => {});
     return () => {
@@ -1248,7 +1274,7 @@ export function GameCatalog() {
   return (
     <div className="solid-3d-panel flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Catalog top controls with search and category filters */}
-      <div className="flex shrink-0 flex-col gap-2.5 border-b border-white/[0.06] p-3 sm:p-4">
+      <div className="flex shrink-0 flex-col gap-2 border-b border-white/[0.06] p-2.5 sm:gap-2.5 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-sm font-semibold tracking-tight text-zinc-100">Games</h2>
@@ -1464,6 +1490,7 @@ export function GameCatalog() {
                   isFavorite={favoriteIds.has(game.id)}
                   isBuggy={buggyIds.has(game.id) || !!game.errorBug}
                   isVerified={verifiedIds.has(game.id) || !!game.verified}
+                  isNotMobile={notMobileIds.has(game.id)}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
                   onToggleFavorite={toggleFavorite}
@@ -1490,6 +1517,7 @@ export function GameCatalog() {
                   isFavorite={favoriteIds.has(game.id)}
                   isBuggy={buggyIds.has(game.id) || !!game.errorBug}
                   isVerified={verifiedIds.has(game.id) || !!game.verified}
+                  isNotMobile={notMobileIds.has(game.id)}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
                   onToggleFavorite={toggleFavorite}

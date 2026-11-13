@@ -116,7 +116,7 @@ export function App() {
         </a>
 
         {/* 3D Top Navigation Bar */}
-        <header className="px-2.5 sm:px-4 pt-2.5 sm:pt-3 shrink-0 z-20">
+        <header className="px-2 pt-2 sm:px-4 sm:pt-3 shrink-0 z-20">
           <div
             className="solid-3d-panel flex w-full flex-nowrap items-center justify-end gap-1.5 px-2.5 py-1 sm:justify-start sm:gap-4 sm:px-4 sm:py-2"
             style={{
@@ -206,7 +206,7 @@ export function App() {
         <main
           id="main"
           tabIndex={-1}
-          className="flex-1 flex flex-col md:flex-row min-h-0 p-2.5 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-3 gap-3 overflow-hidden focus:outline-none"
+          className="flex-1 flex flex-col md:flex-row min-h-0 p-2 gap-2 overflow-hidden focus:outline-none sm:p-3 sm:gap-3 md:p-4 md:pb-3"
         >
           <h1 className="sr-only">“Education” Games — browser games for a study break</h1>
           <section
@@ -235,15 +235,15 @@ export function App() {
 
         <nav
           aria-label="Mobile navigation"
-          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center bg-gradient-to-t from-zinc-950/95 via-zinc-950/65 to-transparent px-4 pt-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:hidden"
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-center bg-gradient-to-t from-zinc-950/95 via-zinc-950/70 to-transparent px-3 pt-3 pb-[calc(0.4rem+env(safe-area-inset-bottom))] md:hidden"
         >
-          <div className="flex w-full max-w-sm items-center gap-1 rounded-2xl border border-white/[0.06] bg-[#171717]/90 p-1.5 shadow-[0_8px_28px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+          <div className="flex w-full max-w-sm items-center gap-1 rounded-2xl border border-white/[0.06] bg-[#171717]/90 p-1 shadow-[0_8px_28px_rgba(0,0,0,0.38)] backdrop-blur-xl">
             <button
               type="button"
               onClick={() => setMobilePanel("games")}
               aria-controls="games-panel"
               aria-pressed={mobilePanel === "games"}
-              className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+              className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                 mobilePanel === "games"
                   ? "bg-white/[0.09] text-zinc-100 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
                   : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
@@ -257,7 +257,7 @@ export function App() {
               onClick={() => setMobilePanel("chat")}
               aria-controls="chat-panel"
               aria-pressed={mobilePanel === "chat"}
-              className={`flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+              className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
                 mobilePanel === "chat"
                   ? "bg-white/[0.09] text-zinc-100 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
                   : "text-zinc-400 hover:bg-white/[0.04] hover:text-zinc-100"
@@ -270,8 +270,8 @@ export function App() {
         </nav>
 
         {/* Bottom Footer with Bug Report and Admin Panel */}
-        <footer className="shrink-0 px-3 py-1.5 text-[11px] text-zinc-500 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-1.5">
-          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+        <footer className="shrink-0 px-2.5 pt-1 text-[10.5px] text-zinc-500 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pb-[calc(3.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:pb-[calc(3.75rem+env(safe-area-inset-bottom))] md:pb-1.5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-2.5">
             <span className="font-medium text-zinc-400">Built by SS</span>
             <div className="flex items-center gap-1.5">
               <button

@@ -261,7 +261,7 @@ export function SettingsModal({
         aria-modal="true"
         aria-labelledby="settings-title"
         tabIndex={-1}
-        className="relative my-auto flex w-full max-w-lg flex-col gap-5 p-5 text-zinc-100 focus:outline-none sm:p-6"
+        className="relative my-auto flex w-full max-w-lg flex-col gap-5 p-5 text-zinc-100 focus:outline-none sm:max-w-2xl sm:p-6 md:max-h-[88vh] md:overflow-y-auto"
         style={{
           background: "#1d1d1d",
           borderRadius: 20,
@@ -570,7 +570,7 @@ export function SettingsModal({
             {/* TAB 2: Solid Colors */}
             {bgTab === "solid" && (
               <div className="flex flex-col gap-2.5">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {BACKGROUND_PRESETS.filter((p) => p.type === "solid").map((preset) => {
                     const isSelected = bgConfig.type === "solid" && bgConfig.id === preset.id;
                     return (
@@ -637,7 +637,7 @@ export function SettingsModal({
 
             {/* TAB 3: Gradients */}
             {bgTab === "gradient" && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {BACKGROUND_PRESETS.filter((p) => p.type === "gradient").map((preset) => {
                   const isSelected = bgConfig.type === "gradient" && bgConfig.id === preset.id;
                   return (

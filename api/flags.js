@@ -35,7 +35,7 @@ async function readFlagsFromD1() {
     const flagRecords = items.filter((x) => x.title === FLAGS_TITLE);
 
     if (flagRecords.length === 0) {
-      return { verified: [], buggy: [], oldIds: [] };
+      return { verified: [], buggy: [], notMobile: [], oldIds: [] };
     }
 
     // Most recent record is first or highest id
@@ -47,10 +47,11 @@ async function readFlagsFromD1() {
       return {
         verified: Array.isArray(parsed.verified) ? parsed.verified : [],
         buggy: Array.isArray(parsed.buggy) ? parsed.buggy : [],
+        notMobile: Array.isArray(parsed.notMobile) ? parsed.notMobile : [],
         oldIds,
       };
     } catch {
-      return { verified: [], buggy: [], oldIds };
+      return { verified: [], buggy: [], notMobile: [], oldIds };
     }
   } catch {
     return null;
@@ -58,7 +59,7 @@ async function readFlagsFromD1() {
 }
 
 // Write flags to fallback D1 bug_reports store
-async function writeFlagsToD1(verified, buggy, oldIds = []) {
+async function writeFlagsToD1(verified, buggy, notMobile, oldIds = []) {
   try {
     // 1. Post new flags record
     const postRes = await cfFetch("/api/bugs", {
@@ -66,7 +67,7 @@ async function writeFlagsToD1(verified, buggy, oldIds = []) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: FLAGS_TITLE,
-        description: JSON.stringify({ verified, buggy }),
+        description: JSON.stringify({ verified, buggy, notMobile }),
         gameUrl: "https://polytrack.internal/flags",
         pageUrl: "/flags",
         browserInfo: "Vercel Proxy Sync",
@@ -133,6 +134,7 @@ module.exports = async function handler(req, res) {
           ok: true,
           verified: Array.isArray(data.verified) ? data.verified : [],
           buggy: Array.isArray(data.buggy) ? data.buggy : [],
+          notMobile: Array.isArray(data.notMobile) ? data.notMobile : [],
         });
       }
     } catch {}
@@ -149,6 +151,7 @@ module.exports = async function handler(req, res) {
       ok: true,
       verified: d1Data.verified,
       buggy: d1Data.buggy,
+      notMobile: d1Data.notMobile,
     });
   }
 
@@ -202,6 +205,7 @@ module.exports = async function handler(req, res) {
     }
     let verifiedSet = new Set(current.verified);
     let buggySet = new Set(current.buggy);
+    let notMobileSet = new Set(current.notMobile);
 
     const action = String(body.action || "get");
     const gameId = String(body.gameId || body.id || "").trim();
@@ -222,6 +226,14 @@ module.exports = async function handler(req, res) {
       else buggySet.delete(gameId);
     } else if (action === "clear_buggy") {
       buggySet.clear();
+    } else if (action === "toggle_not_mobile" && gameId) {
+      if (notMobileSet.has(gameId)) notMobileSet.delete(gameId);
+      else notMobileSet.add(gameId);
+    } else if (action === "set_not_mobile" && gameId) {
+      if (body.notMobile) notMobileSet.add(gameId);
+      else notMobileSet.delete(gameId);
+    } else if (action === "clear_not_mobile") {
+      notMobileSet.clear();
     } else if (action === "sync_all") {
       if (Array.isArray(body.verified)) {
         verifiedSet = new Set(body.verified.filter(Boolean));
@@ -229,13 +241,17 @@ module.exports = async function handler(req, res) {
       if (Array.isArray(body.buggy)) {
         buggySet = new Set(body.buggy.filter(Boolean));
       }
+      if (Array.isArray(body.notMobile)) {
+        notMobileSet = new Set(body.notMobile.filter(Boolean));
+      }
     }
 
     const nextVerified = Array.from(verifiedSet);
     const nextBuggy = Array.from(buggySet);
+    const nextNotMobile = Array.from(notMobileSet);
 
     if (action !== "get") {
-      const saved = await writeFlagsToD1(nextVerified, nextBuggy, current.oldIds);
+      const saved = await writeFlagsToD1(nextVerified, nextBuggy, nextNotMobile, current.oldIds);
       if (!saved) {
         // Report the stored state instead of pretending the change was saved:
         // the admin UI otherwise confirms a sync and then reverts the selection.
@@ -244,6 +260,7 @@ module.exports = async function handler(req, res) {
           error: "Could not save game badges. Please try again.",
           verified: current.verified,
           buggy: current.buggy,
+          notMobile: current.notMobile,
         });
       }
     }
@@ -252,6 +269,7 @@ module.exports = async function handler(req, res) {
       ok: true,
       verified: nextVerified,
       buggy: nextBuggy,
+      notMobile: nextNotMobile,
     });
   }
 

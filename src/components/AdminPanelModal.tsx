@@ -18,10 +18,12 @@ import {
   Check,
   RotateCcw,
   Sparkles,
+  Smartphone,
 } from "lucide-react";
 import { DEFAULT_GAMES, type GameItem } from "./GameCatalog";
 import { loadBuggyGameIds, saveBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
 import { loadVerifiedGameIds, saveVerifiedGameIds, onVerifiedGamesChange } from "@/lib/verifiedGames";
+import { loadNotMobileGameIds, saveNotMobileGameIds, onNotMobileGamesChange } from "@/lib/notMobileGames";
 import { loadGameFlags, updateAdminGameFlags, type GameFlagsData } from "@/lib/hubApi";
 import { Cloud, UploadCloud } from "lucide-react";
 
@@ -63,14 +65,15 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   const [actionLoadingId, setActionLoadingId] = React.useState<number | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = React.useState<number | null>(null);
 
-  // Admin tabs: "verified", "tags" (error:bug), or "bugs" (reports)
-  const [adminTab, setAdminTab] = React.useState<"verified" | "tags" | "bugs">("verified");
+  // Admin tabs: "verified", "tags" (error:bug), "mobile" (not mobile optimized), or "bugs" (reports)
+  const [adminTab, setAdminTab] = React.useState<"verified" | "tags" | "mobile" | "bugs">("verified");
   const [verifiedIds, setVerifiedIds] = React.useState<Set<string>>(loadVerifiedGameIds);
   const [verifiedSearch, setVerifiedSearch] = React.useState("");
   const [verifiedFilter, setVerifiedFilter] = React.useState<"all" | "verified" | "unverified">("all");
   const [syncingCloudflare, setSyncingCloudflare] = React.useState(false);
   const [cloudflareNotice, setCloudflareNotice] = React.useState<string | null>(null);
   const [buggyIds, setBuggyIds] = React.useState<Set<string>>(loadBuggyGameIds);
+  const [notMobileIds, setNotMobileIds] = React.useState<Set<string>>(loadNotMobileGameIds);
   const [gameSearch, setGameSearch] = React.useState("");
   const [gameFilter, setGameFilter] = React.useState<"all" | "flagged" | "clean">("all");
   const [gamesList, setGamesList] = React.useState<GameItem[]>(DEFAULT_GAMES);
@@ -92,6 +95,13 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   React.useEffect(() => {
     return onVerifiedGamesChange((updated) => {
       setVerifiedIds(updated);
+    });
+  }, []);
+
+  // Sync not-mobile game IDs with storage and other components
+  React.useEffect(() => {
+    return onNotMobileGamesChange((updated) => {
+      setNotMobileIds(updated);
     });
   }, []);
 
@@ -190,8 +200,10 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
         .then((flags) => {
           setVerifiedIds(new Set(flags.verified));
           setBuggyIds(new Set(flags.buggy));
+          setNotMobileIds(new Set(flags.notMobile));
           saveVerifiedGameIds(flags.verified);
           saveBuggyGameIds(flags.buggy);
+          saveNotMobileGameIds(flags.notMobile);
         })
         .catch(() => {});
 
@@ -339,6 +351,42 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     );
   };
 
+  const handleToggleNotMobile = async (gameId: string) => {
+    // Compute the next value before updating state: React applies updater functions
+    // later, so reading the value inside one sends a stale request to the backend.
+    const willFlag = !notMobileIds.has(gameId);
+    const next = new Set(notMobileIds);
+    if (willFlag) next.add(gameId);
+    else next.delete(gameId);
+    setNotMobileIds(next);
+    saveNotMobileGameIds(next);
+
+    if (!password) return;
+    await runFlagSync(
+      () => updateAdminGameFlags(password, { action: "set_not_mobile", gameId, notMobile: willFlag }),
+      (res) => {
+        setNotMobileIds(new Set(res.notMobile));
+        saveNotMobileGameIds(res.notMobile);
+      }
+    );
+  };
+
+  const handleClearAllNotMobile = async () => {
+    if (!window.confirm("Remove the 'no mobile' tag from all games on all devices?")) return;
+    saveNotMobileGameIds([]);
+    setNotMobileIds(new Set());
+
+    if (!password) return;
+    await runFlagSync(
+      () => updateAdminGameFlags(password, { action: "clear_not_mobile" }),
+      (res) => {
+        setNotMobileIds(new Set(res.notMobile));
+        saveNotMobileGameIds(res.notMobile);
+      },
+      { successNotice: "Cleared on Cloudflare" }
+    );
+  };
+
   const handleToggleVerified = async (gameId: string) => {
     // Compute the next value before updating state: React applies updater functions
     // later, so reading the value inside one sends a stale request to the backend.
@@ -383,12 +431,15 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
           action: "sync_all",
           verified: Array.from(verifiedIds),
           buggy: Array.from(buggyIds),
+          notMobile: Array.from(notMobileIds),
         }),
       (res) => {
         setVerifiedIds(new Set(res.verified));
         setBuggyIds(new Set(res.buggy));
+        setNotMobileIds(new Set(res.notMobile));
         saveVerifiedGameIds(res.verified);
         saveBuggyGameIds(res.buggy);
+        saveNotMobileGameIds(res.notMobile);
       },
       { successNotice: "Synced all games to Cloudflare!" }
     );
@@ -479,6 +530,19 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     const isFlagged = buggyIds.has(game.id);
     if (gameFilter === "flagged" && !isFlagged) return false;
     if (gameFilter === "clean" && isFlagged) return false;
+    if (!gameSearch.trim()) return true;
+    const q = gameSearch.toLowerCase().trim();
+    return (
+      game.name.toLowerCase().includes(q) ||
+      (game.tags && game.tags.some((t) => t.toLowerCase().includes(q))) ||
+      game.url.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredNotMobileGames = gamesList.filter((game) => {
+    const isTagged = notMobileIds.has(game.id);
+    if (gameFilter === "flagged" && !isTagged) return false;
+    if (gameFilter === "clean" && isTagged) return false;
     if (!gameSearch.trim()) return true;
     const q = gameSearch.toLowerCase().trim();
     return (
@@ -700,6 +764,24 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
               </button>
               <button
                 type="button"
+                onClick={() => setAdminTab("mobile")}
+                style={CHIP_STYLE}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  adminTab === "mobile"
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5 text-amber-400" />
+                <span>Not Mobile Optimized</span>
+                {notMobileIds.size > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-amber-500/30 text-amber-200">
+                    {notMobileIds.size}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
                 onClick={() => setAdminTab("bugs")}
                 style={CHIP_STYLE}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
@@ -734,7 +816,7 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
                   <button
                     type="button"
                     onClick={handlePushAllToCloudflare}
-                    title="Push all verified & bug selections to Cloudflare backend so they appear on other devices"
+                    title="Push all verified, error:bug and no-mobile selections to Cloudflare backend so they appear on other devices"
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-zinc-400 hover:text-emerald-300 transition-colors cursor-pointer"
                   >
                     <Cloud className="w-3.5 h-3.5 text-sky-400" />
@@ -1060,7 +1142,168 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
               </div>
             )}
 
-            {/* TAB 2: Bug Reports List View */}
+            {/* TAB 2: Not Mobile Optimized Tag Selector */}
+            {adminTab === "mobile" && (
+              <div className="flex flex-col gap-3 min-h-0 flex-1">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-200">
+                      Select games to tag as “not mobile optimized”
+                    </span>
+                    {notMobileIds.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllNotMobile}
+                        className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Clear all ({notMobileIds.size})</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Selected games display a <code className="text-amber-300 font-mono">no mobile</code> tag on their game card, so players know to open them on a desktop. Saved to Cloudflare so it applies to every device.
+                  </p>
+                </div>
+
+                {/* Search & Filter Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="relative flex-1 min-w-[180px]">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                    <input
+                      type="text"
+                      value={gameSearch}
+                      onChange={(e) => setGameSearch(e.target.value)}
+                      placeholder="Filter games by name or tag…"
+                      style={{
+                        borderRadius: 10,
+                        background: "rgba(255, 255, 255, 0.04)",
+                        boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.06)",
+                      }}
+                      className="w-full py-1.5 pl-8 pr-3 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setGameFilter("all")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        gameFilter === "all" ? "bg-white/[0.12] text-white font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      All ({gamesList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGameFilter("flagged")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        gameFilter === "flagged" ? "bg-amber-500/20 text-amber-300 font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Tagged ({notMobileIds.size})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGameFilter("clean")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        gameFilter === "clean" ? "bg-white/[0.12] text-white font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Clean ({gamesList.length - notMobileIds.size})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Games List with Toggle Checkbox */}
+                <div className="overflow-y-auto pr-1 space-y-1.5 max-h-[45vh]">
+                  {filteredNotMobileGames.length === 0 ? (
+                    <div className="py-12 text-center text-zinc-500 text-xs">
+                      No games match “{gameSearch}”.
+                    </div>
+                  ) : (
+                    filteredNotMobileGames.map((game) => {
+                      const isTagged = notMobileIds.has(game.id);
+                      return (
+                        <div
+                          key={game.id}
+                          onClick={() => handleToggleNotMobile(game.id)}
+                          style={{
+                            borderRadius: 12,
+                            background: isTagged ? "rgba(245, 158, 11, 0.08)" : "rgba(255, 255, 255, 0.03)",
+                            boxShadow: isTagged
+                              ? "inset 0 0 0 1px rgba(245, 158, 11, 0.25)"
+                              : "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+                          }}
+                          className="p-2.5 flex items-center justify-between gap-3 transition-colors hover:bg-white/[0.05] cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* Checkbox indicator */}
+                            <div
+                              className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors ${
+                                isTagged
+                                  ? "bg-amber-500 text-white shadow-sm"
+                                  : "border border-zinc-600 group-hover:border-zinc-400"
+                              }`}
+                            >
+                              {isTagged && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-semibold truncate ${isTagged ? "text-amber-200" : "text-zinc-200"}`}>
+                                  {game.name}
+                                </span>
+                                {isTagged && (
+                                  <span
+                                    style={{
+                                      ...CHIP_STYLE,
+                                      background: "rgba(245, 158, 11, 0.2)",
+                                      border: "1px solid rgba(245, 158, 11, 0.35)",
+                                      color: "#fcd34d",
+                                    }}
+                                    className="px-2 py-0.2 text-[10px] font-mono font-bold tracking-wide rounded-full inline-flex items-center gap-1"
+                                  >
+                                    <Smartphone className="w-2.5 h-2.5 text-amber-400" />
+                                    no mobile
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-zinc-500 truncate mt-0.5">
+                                <span className="truncate">{game.url}</span>
+                                {game.tags && game.tags.length > 0 && (
+                                  <span className="text-zinc-400">· {game.tags.slice(0, 2).join(", ")}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleNotMobile(game.id);
+                            }}
+                            className={`shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer ${
+                              isTagged
+                                ? "bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
+                                : "bg-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.1]"
+                            }`}
+                          >
+                            {isTagged ? "Remove Tag" : "Add no mobile"}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Bug Reports List View */}
             {adminTab === "bugs" && (
               <div className="flex flex-col gap-3 min-h-0 flex-1">
                 {/* Filter Pills */}

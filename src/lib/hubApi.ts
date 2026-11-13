@@ -1,5 +1,14 @@
+import { loadNotMobileGameIds } from "./notMobileGames";
+
 const HUB_API = "/api/hub";
 const WORKER_ORIGIN = "https://polytrack-hub-api.sawyerbobk563.workers.dev";
+
+// A backend deployed before the "not mobile optimized" tag existed omits it from
+// its responses, so keep the tags already stored on this device instead of
+// wiping them on every read or save.
+function readNotMobileFlags(data: any): string[] {
+  return Array.isArray(data?.notMobile) ? data.notMobile : Array.from(loadNotMobileGameIds());
+}
 
 export interface HubMessage {
   id: string;
@@ -18,6 +27,7 @@ export interface GameStats {
 export interface GameFlagsData {
   verified: string[];
   buggy: string[];
+  notMobile: string[];
 }
 
 export async function loadMessages(): Promise<HubMessage[]> {
@@ -79,6 +89,7 @@ export async function loadGameFlags(): Promise<GameFlagsData> {
       return {
         verified: Array.isArray(data.verified) ? data.verified : [],
         buggy: Array.isArray(data.buggy) ? data.buggy : [],
+        notMobile: readNotMobileFlags(data),
       };
     }
   } catch {}
@@ -94,6 +105,7 @@ export async function loadGameFlags(): Promise<GameFlagsData> {
       return {
         verified: Array.isArray(data.verified) ? data.verified : [],
         buggy: Array.isArray(data.buggy) ? data.buggy : [],
+        notMobile: readNotMobileFlags(data),
       };
     }
   } catch {}
@@ -110,10 +122,22 @@ export async function loadGameFlags(): Promise<GameFlagsData> {
 export async function updateAdminGameFlags(
   pwd: string,
   payload: {
-    action: "toggle_verified" | "set_verified" | "clear_verified" | "toggle_buggy" | "set_buggy" | "clear_buggy" | "sync_all" | "get";
+    action:
+      | "toggle_verified"
+      | "set_verified"
+      | "clear_verified"
+      | "toggle_buggy"
+      | "set_buggy"
+      | "clear_buggy"
+      | "toggle_not_mobile"
+      | "set_not_mobile"
+      | "clear_not_mobile"
+      | "sync_all"
+      | "get";
     gameId?: string;
     verified?: boolean | string[];
     buggy?: boolean | string[];
+    notMobile?: boolean | string[];
   }
 ): Promise<GameFlagsData> {
   const reqBody = { ...payload, target: "flags", password: pwd };
@@ -158,5 +182,6 @@ export async function updateAdminGameFlags(
   return {
     verified: Array.isArray(data.verified) ? data.verified : [],
     buggy: Array.isArray(data.buggy) ? data.buggy : [],
+    notMobile: readNotMobileFlags(data),
   };
 }
