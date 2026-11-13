@@ -19,6 +19,22 @@
       "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/views"
     },
     {
+      "source": "/api/hub/bugs",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/bugs"
+    },
+    {
+      "source": "/api/hub/bugs/",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/bugs"
+    },
+    {
+      "source": "/api/hub/admin/bugs",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/bugs"
+    },
+    {
+      "source": "/api/hub/admin/bugs/",
+      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/bugs"
+    },
+    {
       "source": "/api/hub/:path*",
       "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/:path*"
     },

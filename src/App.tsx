@@ -6,8 +6,10 @@ import { VisitorCounter } from "./components/VisitorCounter";
 import { ShareButton } from "./components/ShareButton";
 import { SettingsModal } from "./components/SettingsModal";
 import { SiteLock } from "./components/SiteLock";
+import { BugReportModal } from "./components/BugReportModal";
+import { AdminPanelModal } from "./components/AdminPanelModal";
 import { HalftoneHorizon } from "./components/ui/halftone-horizon";
-import { Compass, Send, Sparkles, Settings, Gamepad2, MessageCircle } from "lucide-react";
+import { Compass, Send, Sparkles, Settings, Gamepad2, MessageCircle, Bug, Shield } from "lucide-react";
 import { applyTabCloak, loadTabCloakSettings, saveTabCloakSettings, type TabCloakSettings } from "./lib/tabCloak";
 
 const CHIP_STYLE: React.CSSProperties = {
@@ -18,6 +20,8 @@ const CHIP_STYLE: React.CSSProperties = {
 
 export function App() {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [bugModalOpen, setBugModalOpen] = React.useState(false);
+  const [adminModalOpen, setAdminModalOpen] = React.useState(false);
   const [mobilePanel, setMobilePanel] = React.useState<"games" | "chat">("games");
   const [isUnlocked, setIsUnlocked] = React.useState(false);
   const [tabCloakSettings, setTabCloakSettings] = React.useState<TabCloakSettings>(loadTabCloakSettings);
@@ -151,7 +155,7 @@ export function App() {
         <main
           id="main"
           tabIndex={-1}
-          className="flex-1 flex flex-col md:flex-row min-h-0 p-2.5 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-4 gap-3 overflow-hidden focus:outline-none"
+          className="flex-1 flex flex-col md:flex-row min-h-0 p-2.5 pb-[calc(5.25rem+env(safe-area-inset-bottom))] sm:p-4 sm:pb-[calc(5.25rem+env(safe-area-inset-bottom))] md:pb-3 gap-3 overflow-hidden focus:outline-none"
         >
           <h1 className="sr-only">“Education” Games — browser games for a study break</h1>
           <section
@@ -214,12 +218,34 @@ export function App() {
           </div>
         </nav>
 
-        {/* Clean Footer (without DR rating badge) */}
-        <footer className="hidden shrink-0 px-3 py-2 text-[11px] text-zinc-500 md:flex md:flex-wrap md:items-center md:justify-between md:gap-x-4 md:gap-y-2 md:px-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <span>Built by SS</span>
+        {/* Bottom Footer with Bug Report and Admin Panel */}
+        <footer className="shrink-0 px-3 py-1.5 text-[11px] text-zinc-500 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 sm:px-4 pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-1.5">
+          <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+            <span className="font-medium text-zinc-400">Built by SS</span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setBugModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-zinc-300 hover:text-white transition-colors hover:bg-white/[0.08] cursor-pointer"
+                style={CHIP_STYLE}
+                title="Report a broken game or bug"
+              >
+                <Bug aria-hidden="true" className="w-3.5 h-3.5 text-amber-400" />
+                <span>Report Bug</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAdminModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-zinc-300 hover:text-white transition-colors hover:bg-white/[0.08] cursor-pointer"
+                style={CHIP_STYLE}
+                title="Admin panel (protected by Vercel ADMIN_PASSWORD)"
+              >
+                <Shield aria-hidden="true" className="w-3.5 h-3.5 text-blue-400" />
+                <span>Admin</span>
+              </button>
+            </div>
           </div>
-          <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <nav aria-label="Footer" className="hidden sm:flex flex-wrap items-center gap-x-4 gap-y-1">
             <a href="mailto:hello@base31.org" className="transition-colors hover:text-zinc-200">
               hello@base31.org
             </a>
@@ -240,6 +266,16 @@ export function App() {
         onConfigChange={handleConfigChange}
         tabCloakSettings={tabCloakSettings}
         onTabCloakChange={handleTabCloakChange}
+      />
+
+      <BugReportModal
+        isOpen={bugModalOpen}
+        onClose={() => setBugModalOpen(false)}
+      />
+
+      <AdminPanelModal
+        isOpen={adminModalOpen}
+        onClose={() => setAdminModalOpen(false)}
       />
     </HalftoneHorizon>
   );
