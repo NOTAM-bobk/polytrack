@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { DEFAULT_GAMES, type GameItem } from "./GameCatalog";
 import { loadBuggyGameIds, saveBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
+import { loadVerifiedGameIds, saveVerifiedGameIds, onVerifiedGamesChange } from "@/lib/verifiedGames";
 
 interface AdminPanelModalProps {
   isOpen: boolean;
@@ -60,8 +61,11 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   const [actionLoadingId, setActionLoadingId] = React.useState<number | null>(null);
   const [rateLimitSeconds, setRateLimitSeconds] = React.useState<number | null>(null);
 
-  // Admin tabs: "bugs" (reports) or "tags" (select games with "error:bug" tag)
-  const [adminTab, setAdminTab] = React.useState<"bugs" | "tags">("tags");
+  // Admin tabs: "verified", "tags" (error:bug), or "bugs" (reports)
+  const [adminTab, setAdminTab] = React.useState<"verified" | "tags" | "bugs">("verified");
+  const [verifiedIds, setVerifiedIds] = React.useState<Set<string>>(loadVerifiedGameIds);
+  const [verifiedSearch, setVerifiedSearch] = React.useState("");
+  const [verifiedFilter, setVerifiedFilter] = React.useState<"all" | "verified" | "unverified">("all");
   const [buggyIds, setBuggyIds] = React.useState<Set<string>>(loadBuggyGameIds);
   const [gameSearch, setGameSearch] = React.useState("");
   const [gameFilter, setGameFilter] = React.useState<"all" | "flagged" | "clean">("all");
@@ -73,6 +77,13 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
   React.useEffect(() => {
     return onBuggyGamesChange((updated) => {
       setBuggyIds(updated);
+    });
+  }, []);
+
+  // Sync verified game IDs with storage and other components
+  React.useEffect(() => {
+    return onVerifiedGamesChange((updated) => {
+      setVerifiedIds(updated);
     });
   }, []);
 
@@ -256,6 +267,25 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     setBuggyIds(new Set());
   };
 
+  const handleToggleVerified = (gameId: string) => {
+    setVerifiedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(gameId)) {
+        next.delete(gameId);
+      } else {
+        next.add(gameId);
+      }
+      saveVerifiedGameIds(next);
+      return next;
+    });
+  };
+
+  const handleClearAllVerified = () => {
+    if (!window.confirm("Remove Verified status from all games?")) return;
+    saveVerifiedGameIds([]);
+    setVerifiedIds(new Set());
+  };
+
   const handleUpdateStatus = async (id: number, nextStatus: "open" | "resolved") => {
     setActionLoadingId(id);
     try {
@@ -343,6 +373,19 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     if (gameFilter === "clean" && isFlagged) return false;
     if (!gameSearch.trim()) return true;
     const q = gameSearch.toLowerCase().trim();
+    return (
+      game.name.toLowerCase().includes(q) ||
+      (game.tags && game.tags.some((t) => t.toLowerCase().includes(q))) ||
+      game.url.toLowerCase().includes(q)
+    );
+  });
+
+  const filteredVerifiedGames = gamesList.filter((game) => {
+    const isVer = verifiedIds.has(game.id);
+    if (verifiedFilter === "verified" && !isVer) return false;
+    if (verifiedFilter === "unverified" && isVer) return false;
+    if (!verifiedSearch.trim()) return true;
+    const q = verifiedSearch.toLowerCase().trim();
     return (
       game.name.toLowerCase().includes(q) ||
       (game.tags && game.tags.some((t) => t.toLowerCase().includes(q))) ||
@@ -509,7 +552,25 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
           /* Unlocked Admin View with Tabs */
           <div className="flex flex-col gap-3 min-h-0 flex-1">
             {/* Main Tabs Navigation */}
-            <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2">
+            <div className="flex items-center gap-2 border-b border-white/[0.08] pb-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setAdminTab("verified")}
+                style={CHIP_STYLE}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  adminTab === "verified"
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm"
+                    : "text-zinc-400 hover:text-white"
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Verified Games</span>
+                {verifiedIds.size > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-emerald-500/30 text-emerald-200">
+                    {verifiedIds.size}
+                  </span>
+                )}
+              </button>
               <button
                 type="button"
                 onClick={() => setAdminTab("tags")}
@@ -521,7 +582,7 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
                 }`}
               >
                 <Bug className="w-3.5 h-3.5 text-rose-400" />
-                <span>error:bug Game Tags</span>
+                <span>error:bug Tags</span>
                 {buggyIds.size > 0 && (
                   <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-mono bg-rose-500/30 text-rose-200">
                     {buggyIds.size}
@@ -547,6 +608,161 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
                 )}
               </button>
             </div>
+
+            {/* TAB 0: Verified Games Selector */}
+            {adminTab === "verified" && (
+              <div className="flex flex-col gap-3 min-h-0 flex-1">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-zinc-200">
+                      Select games to mark as Verified
+                    </span>
+                    {verifiedIds.size > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllVerified}
+                        className="inline-flex items-center gap-1 text-[11px] text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Clear all ({verifiedIds.size})</span>
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-zinc-400 leading-relaxed">
+                    Selected games will display a small green verified checked icon (<CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 inline -mt-0.5" />) next to their title on their game site card.
+                  </p>
+                </div>
+
+                {/* Search & Filter Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="relative flex-1 min-w-[180px]">
+                    <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                    <input
+                      type="text"
+                      value={verifiedSearch}
+                      onChange={(e) => setVerifiedSearch(e.target.value)}
+                      placeholder="Filter games by name or tag…"
+                      style={{
+                        borderRadius: 10,
+                        background: "rgba(255, 255, 255, 0.04)",
+                        boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.06)",
+                      }}
+                      className="w-full py-1.5 pl-8 pr-3 text-xs text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setVerifiedFilter("all")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        verifiedFilter === "all" ? "bg-white/[0.12] text-white font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      All ({gamesList.length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerifiedFilter("verified")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        verifiedFilter === "verified" ? "bg-emerald-500/20 text-emerald-300 font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Verified ({verifiedIds.size})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVerifiedFilter("unverified")}
+                      style={CHIP_STYLE}
+                      className={`px-2.5 py-1 text-[11px] transition-colors cursor-pointer ${
+                        verifiedFilter === "unverified" ? "bg-white/[0.12] text-white font-semibold" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      Unverified ({gamesList.length - verifiedIds.size})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Games List with Toggle Checkbox */}
+                <div className="overflow-y-auto pr-1 space-y-1.5 max-h-[45vh]">
+                  {filteredVerifiedGames.length === 0 ? (
+                    <div className="py-12 text-center text-zinc-500 text-xs">
+                      No games match "{verifiedSearch}".
+                    </div>
+                  ) : (
+                    filteredVerifiedGames.map((game) => {
+                      const isVer = verifiedIds.has(game.id);
+                      return (
+                        <div
+                          key={game.id}
+                          onClick={() => handleToggleVerified(game.id)}
+                          style={{
+                            borderRadius: 12,
+                            background: isVer ? "rgba(16, 185, 129, 0.08)" : "rgba(255, 255, 255, 0.03)",
+                            boxShadow: isVer
+                              ? "inset 0 0 0 1px rgba(16, 185, 129, 0.28)"
+                              : "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+                          }}
+                          className="p-2.5 flex items-center justify-between gap-3 transition-colors hover:bg-white/[0.05] cursor-pointer group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {/* Checkbox indicator */}
+                            <div
+                              className={`w-4 h-4 rounded flex items-center justify-center shrink-0 transition-colors ${
+                                isVer
+                                  ? "bg-emerald-500 text-white shadow-sm"
+                                  : "border border-zinc-600 group-hover:border-zinc-400"
+                              }`}
+                            >
+                              {isVer && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-semibold truncate ${isVer ? "text-emerald-200" : "text-zinc-200"}`}>
+                                  {game.name}
+                                </span>
+                                {isVer && (
+                                  <span
+                                    title="Verified game"
+                                    className="inline-flex items-center text-emerald-400"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 fill-emerald-500/20 text-emerald-400" />
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-zinc-500 truncate mt-0.5">
+                                <span className="truncate">{game.url}</span>
+                                {game.tags && game.tags.length > 0 && (
+                                  <span className="text-zinc-400">· {game.tags.slice(0, 2).join(", ")}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleVerified(game.id);
+                            }}
+                            className={`shrink-0 px-2.5 py-1 text-[11px] font-medium rounded-lg transition-colors cursor-pointer ${
+                              isVer
+                                ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30"
+                                : "bg-white/[0.06] text-zinc-400 hover:text-white hover:bg-white/[0.1]"
+                            }`}
+                          >
+                            {isVer ? "Verified ✓" : "Mark Verified"}
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* TAB 1: Game Bug Tags Selector */}
             {adminTab === "tags" && (

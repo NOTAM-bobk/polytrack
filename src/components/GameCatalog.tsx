@@ -1,6 +1,7 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star, Bug } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star, Bug, CheckCircle2 } from "lucide-react";
 import { loadBuggyGameIds, onBuggyGamesChange } from "@/lib/buggyGames";
+import { loadVerifiedGameIds, onVerifiedGamesChange } from "@/lib/verifiedGames";
 import { loadGameStats, recordGameClick } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
@@ -119,6 +120,7 @@ export interface GameItem {
   clicks?: number;
   editorsPick?: boolean;
   errorBug?: boolean;
+  verified?: boolean;
 }
 
 function nameKey(name: string) {
@@ -177,7 +179,8 @@ export function mergeCatalog(defaults: GameItem[], loaded: GameItem[]): GameItem
           : item.description,
       disabled: match.disabled ?? item.disabled,
       editorsPick: match.editorsPick ?? item.editorsPick,
-      errorBug: match.errorBug ?? item.errorBug
+      errorBug: match.errorBug ?? item.errorBug,
+      verified: match.verified ?? item.verified
     });
   }
 
@@ -789,6 +792,7 @@ function GameCard({
   isPopular,
   isFavorite,
   isBuggy,
+  isVerified,
   searchQuery,
   onPlay,
   onToggleFavorite
@@ -798,6 +802,7 @@ function GameCard({
   isPopular: boolean;
   isFavorite: boolean;
   isBuggy: boolean;
+  isVerified: boolean;
   searchQuery: string;
   onPlay: (game: GameItem) => void;
   onToggleFavorite: (id: string, event?: React.MouseEvent) => void;
@@ -828,19 +833,25 @@ function GameCard({
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
             )}
+            {isVerified && (
+              <span
+                title="Verified game"
+                className="inline-flex shrink-0 items-center justify-center text-emerald-400"
+              >
+                <CheckCircle2
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 fill-emerald-500/20 text-emerald-400 drop-shadow-[0_0_5px_rgba(52,211,153,0.35)]"
+                />
+                <span className="sr-only">Verified game</span>
+              </span>
+            )}
             {game.editorsPick && (
               <span
                 title="Editor's Pick"
-                style={{
-                  ...CHIP_STYLE,
-                  background: "linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.12))",
-                  border: "1px solid rgba(245, 158, 11, 0.35)",
-                  color: "#fde68a"
-                }}
-                className="inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-[10.5px] font-semibold tracking-wide"
+                style={CHIP_STYLE}
+                className="shrink-0 px-2 py-0.5 text-[11px] font-medium text-amber-300"
               >
-                <Sparkles aria-hidden="true" className="h-3 w-3 text-amber-300" />
-                <span>Editor's Pick</span>
+                Editor's Pick
               </span>
             )}
             {isBuggy && (
@@ -979,6 +990,12 @@ export function GameCatalog() {
     return onBuggyGamesChange((updated) => setBuggyIds(updated));
   }, []);
 
+  const [verifiedIds, setVerifiedIds] = React.useState<Set<string>>(loadVerifiedGameIds);
+
+  React.useEffect(() => {
+    return onVerifiedGamesChange((updated) => setVerifiedIds(updated));
+  }, []);
+
   const toggleFavorite = React.useCallback((id: string, event?: React.MouseEvent) => {
     if (event) {
       event.preventDefault();
@@ -1028,7 +1045,8 @@ export function GameCatalog() {
             tags: g.category ? [g.category.toUpperCase(), "Web"] : ["Catalog", "Web"],
             disabled: !!g.disabled,
             editorsPick: !!g.editorsPick,
-            errorBug: !!g.errorBug || !!g.buggy
+            errorBug: !!g.errorBug || !!g.buggy,
+            verified: !!g.verified
           }));
 
           setGames((prev) => mergeCatalog(prev, loaded));
@@ -1428,6 +1446,7 @@ export function GameCatalog() {
                   isPopular={popularGameId === game.id}
                   isFavorite={favoriteIds.has(game.id)}
                   isBuggy={buggyIds.has(game.id) || !!game.errorBug}
+                  isVerified={verifiedIds.has(game.id) || !!game.verified}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
                   onToggleFavorite={toggleFavorite}
@@ -1453,6 +1472,7 @@ export function GameCatalog() {
                   isPopular={popularGameId === game.id}
                   isFavorite={favoriteIds.has(game.id)}
                   isBuggy={buggyIds.has(game.id) || !!game.errorBug}
+                  isVerified={verifiedIds.has(game.id) || !!game.verified}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
                   onToggleFavorite={toggleFavorite}
