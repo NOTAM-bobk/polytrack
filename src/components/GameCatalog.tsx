@@ -457,7 +457,92 @@ export const DEFAULT_GAMES: GameItem[] = [
     tags: ["Driving", "Monster Truck", "Offroad", "Physics"]
   },
   {
+    id: "game-hexgl",
+    name: "HexGL",
+    url: "https://hexgl.poly2.benlaunches.icu",
+    description: "High-speed futuristic 3D sci-fi racing craft built with WebGL. Master tight turns and boost pads.",
+    tags: ["Driving", "Racing", "Sci-Fi", "3D", "Speed"]
+  },
+  {
+    id: "game-cut-the-rope",
+    name: "Cut the Rope",
+    url: "https://cutthe.benlaunches.icu",
+    description: "Cut ropes, pop bubbles, and collect golden stars to feed delicious candy to Om Nom.",
+    tags: ["Puzzle", "Physics", "Classic", "Logic"]
+  },
+  {
+    id: "game-geometry-dash",
+    name: "Geometry Dash",
+    url: "/games/geometry-dash.html",
+    description: "Jump, fly, and flip your way through dangerous geometric passages and spiky obstacles to the beat.",
+    tags: ["Arcade", "Rhythm", "Platformer", "Skill", "Hard"]
+  },
+  {
+    id: "game-basket-random",
+    name: "Basket Random",
+    url: "/games/basket-random.html",
+    description: "Hilarious one-button ragdoll 2-player basketball with bouncy balls, changing courts, and wild physics.",
+    tags: ["Sports", "Basketball", "Physics", "2 Player", "Funny"]
+  },
+  {
+    id: "game-basketball-stars",
+    name: "Basketball Stars",
+    url: "/games/basketball-stars.html",
+    description: "Dribble, shoot 3-pointers, perform rim-rattling dunks, and steal the ball in 1-on-1 basketball matchups.",
+    tags: ["Sports", "Basketball", "2 Player", "Skill", "Tournament"]
+  },
+  {
+    id: "game-getaway-shootout",
+    name: "Getaway Shootout",
+    url: "/games/getaway-shootout.html",
+    description: "Race three opponents to the getaway vehicle using physics-based jumping and an arsenal of wacky weapons.",
+    tags: ["Action", "Physics", "2 Player", "Shooter", "Multiplayer"]
+  },
+  {
+    id: "game-bad-ice-cream",
+    name: "Bad Ice-Cream",
+    url: "/games/bad-ice-cream.html",
+    description: "Nitrome's frosty classic: build and break ice block walls, collect delicious fruit, and avoid roaming enemies.",
+    tags: ["Arcade", "Retro", "Puzzle", "Classic", "2 Player"]
+  },
+  {
+    id: "game-iron-snout",
+    name: "Iron Snout",
+    url: "/games/iron-snout.html",
+    description: "Fast and furious martial arts action as a pig fighting off hordes of axe-wielding wolves with kicks and punches.",
+    tags: ["Action", "Combat", "Fighting", "Arcade", "Reflex"]
+  },
+  {
+    id: "game-we-become-what-we-behold",
+    name: "We Become What We Behold",
+    url: "/games/we-become-what-we-behold.html",
+    description: "A thought-provoking 5-minute game by Nicky Case about media cycles, viral cameras, and how stories amplify differences.",
+    tags: ["Casual", "Indie", "Story", "Short", "Simulation"]
+  },
+  {
+    id: "game-happy-wheels",
+    name: "Happy Wheels",
+    url: "/games/happy-wheels.html",
+    description: "Jim Bonacci's legendary physics ragdoll obstacle course: navigate lethal traps, mines, and spikes across dangerous tracks.",
+    tags: ["Action", "Physics", "Obstacles", "Classic", "Funny"]
+  },
+  {
+    id: "game-duck-life-3",
+    name: "Duck Life 3: Evolution",
+    url: "/games/duck-life-3.html",
+    description: "Choose your duck's genetic breed, train racing attributes, and evolve into a flying, running champion.",
+    tags: ["Casual", "Training", "Racing", "Pets", "Upgrade"]
+  },
+  {
+    id: "game-vex-4",
+    name: "Vex 4",
+    url: "/games/vex-4.html",
+    description: "Guide your agile stickman through deadly obstacle courses, lasers, buzzsaws, and high-speed parkour challenges.",
+    tags: ["Arcade", "Parkour", "Platformer", "Skill", "Stickman"]
+  },
+  {
     id: "game-ducklings",
+
     name: "Ducklings.io",
     url: "https://ducklings.io/",
     description: "Rescue ducklings and grow your nest.",
@@ -519,7 +604,10 @@ function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
         ) ||
         nameLower.includes("smash") ||
         nameLower.includes("brawl") ||
-        nameLower.includes("tank")
+        nameLower.includes("tank") ||
+        nameLower.includes("shootout") ||
+        nameLower.includes("snout") ||
+        nameLower.includes("happy wheels")
       );
     case "driving":
       return (
@@ -532,19 +620,21 @@ function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
             "drift",
             "4x4",
             "offroad",
-            "cars"
+            "cars",
+            "sci-fi"
           ].includes(t)
         ) ||
         nameLower.includes("drive") ||
         nameLower.includes("moto") ||
         nameLower.includes("drift") ||
+        nameLower.includes("hexgl") ||
         nameLower.includes("polytrack")
       );
     case "sports":
       return (
-        tagsLower.some((t) => ["sports", "football"].includes(t)) ||
+        tagsLower.some((t) => ["sports", "football", "basketball", "soccer"].includes(t)) ||
         nameLower.includes("bowl") ||
-        nameLower.includes("retro bowl")
+        nameLower.includes("basket")
       );
     case "arcade":
       return (
@@ -558,14 +648,18 @@ function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
             "skill",
             "speedrun",
             "parkour",
-            "jumper"
+            "jumper",
+            "rhythm"
           ].includes(t)
         ) ||
         nameLower.includes("jump") ||
         nameLower.includes("bird") ||
         nameLower.includes("run") ||
         nameLower.includes("ovo") ||
-        nameLower.includes("hook")
+        nameLower.includes("hook") ||
+        nameLower.includes("geometry") ||
+        nameLower.includes("ice-cream") ||
+        nameLower.includes("vex")
       );
     case "puzzle":
       return (
@@ -588,7 +682,9 @@ function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
         nameLower.includes("school") ||
         nameLower.includes("bloxorz") ||
         nameLower.includes("2048") ||
-        nameLower.includes("bloons")
+        nameLower.includes("bloons") ||
+        nameLower.includes("rope") ||
+        nameLower.includes("cut the rope")
       );
     case "casual":
       return (
@@ -610,7 +706,8 @@ function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
         nameLower.includes("fishing") ||
         nameLower.includes("papa") ||
         nameLower.includes("duck") ||
-        nameLower.includes("bitlife")
+        nameLower.includes("bitlife") ||
+        nameLower.includes("behold")
       );
     default:
       return true;

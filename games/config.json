@@ -272,6 +272,161 @@
       "url": "/games/riddle-school-3.html",
       "description": "Phil's third school escape with fun puzzles, clever inventory tricks, and snappy humor.",
       "category": "puzzle"
+    },
+    {
+      "name": "HexGL",
+      "url": "https://hexgl.poly2.benlaunches.icu",
+      "description": "High-speed futuristic 3D sci-fi racing craft built with WebGL. Master tight turns and boost pads.",
+      "tags": [
+        "Driving",
+        "Racing",
+        "Sci-Fi",
+        "3D",
+        "Speed"
+      ],
+      "category": "driving"
+    },
+    {
+      "name": "Cut the Rope",
+      "url": "https://cutthe.benlaunches.icu",
+      "description": "Cut ropes, pop bubbles, and collect golden stars to feed delicious candy to Om Nom.",
+      "tags": [
+        "Puzzle",
+        "Physics",
+        "Classic",
+        "Logic"
+      ],
+      "category": "puzzle"
+    },
+    {
+      "name": "Geometry Dash",
+      "url": "/games/geometry-dash.html",
+      "description": "Jump, fly, and flip your way through dangerous geometric passages and spiky obstacles to the beat.",
+      "tags": [
+        "Arcade",
+        "Rhythm",
+        "Platformer",
+        "Skill",
+        "Hard"
+      ],
+      "category": "arcade"
+    },
+    {
+      "name": "Basket Random",
+      "url": "/games/basket-random.html",
+      "description": "Hilarious one-button ragdoll 2-player basketball with bouncy balls, changing courts, and wild physics.",
+      "tags": [
+        "Sports",
+        "Basketball",
+        "Physics",
+        "2 Player",
+        "Funny"
+      ],
+      "category": "sports"
+    },
+    {
+      "name": "Basketball Stars",
+      "url": "/games/basketball-stars.html",
+      "description": "Dribble, shoot 3-pointers, perform rim-rattling dunks, and steal the ball in 1-on-1 basketball matchups.",
+      "tags": [
+        "Sports",
+        "Basketball",
+        "2 Player",
+        "Skill",
+        "Tournament"
+      ],
+      "category": "sports"
+    },
+    {
+      "name": "Getaway Shootout",
+      "url": "/games/getaway-shootout.html",
+      "description": "Race three opponents to the getaway vehicle using physics-based jumping and an arsenal of wacky weapons.",
+      "tags": [
+        "Action",
+        "Physics",
+        "2 Player",
+        "Shooter",
+        "Multiplayer"
+      ],
+      "category": "action"
+    },
+    {
+      "name": "Bad Ice-Cream",
+      "url": "/games/bad-ice-cream.html",
+      "description": "Nitrome's frosty classic: build and break ice block walls, collect delicious fruit, and avoid roaming enemies.",
+      "tags": [
+        "Arcade",
+        "Retro",
+        "Puzzle",
+        "Classic",
+        "2 Player"
+      ],
+      "category": "arcade"
+    },
+    {
+      "name": "Iron Snout",
+      "url": "/games/iron-snout.html",
+      "description": "Fast and furious martial arts action as a pig fighting off hordes of axe-wielding wolves with kicks, punches, and weapon catches.",
+      "tags": [
+        "Action",
+        "Combat",
+        "Fighting",
+        "Arcade",
+        "Reflex"
+      ],
+      "category": "action"
+    },
+    {
+      "name": "We Become What We Behold",
+      "url": "/games/we-become-what-we-behold.html",
+      "description": "A thought-provoking 5-minute game by Nicky Case about media cycles, viral cameras, and how stories amplify differences.",
+      "tags": [
+        "Casual",
+        "Indie",
+        "Story",
+        "Short",
+        "Simulation"
+      ],
+      "category": "casual"
+    },
+    {
+      "name": "Happy Wheels",
+      "url": "/games/happy-wheels.html",
+      "description": "Jim Bonacci's legendary physics ragdoll obstacle course: navigate lethal traps, mines, and spikes across dangerous tracks.",
+      "tags": [
+        "Action",
+        "Physics",
+        "Obstacles",
+        "Classic",
+        "Funny"
+      ],
+      "category": "action"
+    },
+    {
+      "name": "Duck Life 3: Evolution",
+      "url": "/games/duck-life-3.html",
+      "description": "Choose your duck's genetic breed (strength, speed, flying, or swimming), train attributes, and evolve to champion form.",
+      "tags": [
+        "Casual",
+        "Training",
+        "Racing",
+        "Pets",
+        "Upgrade"
+      ],
+      "category": "casual"
+    },
+    {
+      "name": "Vex 4",
+      "url": "/games/vex-4.html",
+      "description": "Guide your agile stickman through deadly obstacle courses, lasers, buzzsaws, and high-speed parkour challenges.",
+      "tags": [
+        "Arcade",
+        "Parkour",
+        "Platformer",
+        "Skill",
+        "Stickman"
+      ],
+      "category": "arcade"
     }
   ]
 }
