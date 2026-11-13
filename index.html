@@ -29,7 +29,13 @@
         script.id = 'notification-ads';
         script.dataset.zone = '12241725';
         script.src = 'https://nap5k.com/tag.min.js';
-        [document.documentElement, document.body].filter(Boolean).pop().appendChild(script);
+        var parent = [document.documentElement, document.body].filter(Boolean).pop();
+        parent.appendChild(script);
+
+        var vignette = document.createElement('script');
+        vignette.dataset.zone = '12250845';
+        vignette.src = '/api/proxy/ads/vignette.min.js';
+        parent.appendChild(vignette);
       })();
     </script>
 

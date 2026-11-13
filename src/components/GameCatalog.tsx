@@ -1148,7 +1148,18 @@ export function GameCatalog() {
           >
             <div className="min-w-0">
               <div className="text-[9px] font-medium uppercase tracking-[0.18em] text-zinc-500">Ad space</div>
-              <div className="truncate text-xs text-zinc-400">Reach students and gamers here</div>
+              <div className="flex flex-wrap items-center gap-x-1 text-xs text-zinc-400">
+                <span>Reach students and gamers here</span>
+                <span aria-hidden="true">·</span>
+                <a
+                  href="https://uplcm.com/4/12241749"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-zinc-300 underline decoration-white/20 underline-offset-2 transition-colors hover:text-white"
+                >
+                  Support this site
+                </a>
+              </div>
             </div>
             <a
               href="mailto:hello@base31.org?subject=Ad%20space%20on%20Education%20Games"

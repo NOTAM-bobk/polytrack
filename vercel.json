@@ -25,6 +25,10 @@
     {
       "source": "/api/proxy/ruffle/:path*",
       "destination": "https://unpkg.com/@ruffle-rs/ruffle@0.7.1/:path*"
+    },
+    {
+      "source": "/api/proxy/ads/:path*",
+      "destination": "https://n6wxm.com/:path*"
     }
   ]
 }
