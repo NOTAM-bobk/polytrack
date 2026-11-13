@@ -104,6 +104,11 @@ function sameGame(a: GameItem, b: GameItem) {
   const x = nameKey(a.name);
   const y = nameKey(b.name);
   if (!x || !y) return false;
+
+  // Keep numbered sequels (e.g. Monster Tracks 2) distinct from the original title.
+  const sequelNumber = (name: string) => name.match(/[0-9]+$/)?.[0] ?? "";
+  if (sequelNumber(x) !== sequelNumber(y)) return false;
+
   return x === y || x.startsWith(y) || y.startsWith(x) || x.includes(y) || y.includes(x);
 }
 
@@ -425,8 +430,14 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Monster Track",
     url: "https://monster.benlaunches.icu/",
     description: "Take a monster truck through off-road courses.",
-    tags: ["Driving", "4x4", "Offroad", "Physics"],
-    disabled: true
+    tags: ["Driving", "4x4", "Offroad", "Physics"]
+  },
+  {
+    id: "game-monster-tracks-2",
+    name: "Monster Tracks 2",
+    url: "https://awesometank2.benlaunches.icu/",
+    description: "Drive monster trucks through off-road courses and obstacles.",
+    tags: ["Driving", "Monster Truck", "Offroad", "Physics"]
   },
   {
     id: "game-ducklings",
@@ -589,15 +600,50 @@ function matchesCategory(game: GameItem, categoryId: CategoryId): boolean {
   }
 }
 
+function escapeRegExp(value: string) {
+  const meta = new Set([".", "*", "+", "?", "^", "$", "{", "}", "(", ")", "|", "[", "]", "\\"]);
+  return [...value].map((character) => (meta.has(character) ? `\\${character}` : character)).join("");
+}
+
+function HighlightText({ text, query }: { text: string; query: string }) {
+  const terms = query.trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return <>{text}</>;
+
+  const termSet = new Set(terms.map((term) => term.toLocaleLowerCase()));
+  const matcher = new RegExp(
+    `(${[...terms].sort((a, b) => b.length - a.length).map(escapeRegExp).join("|")})`,
+    "gi"
+  );
+
+  return (
+    <>
+      {text.split(matcher).map((part, index) =>
+        termSet.has(part.toLocaleLowerCase()) ? (
+          <mark
+            key={`${index}-${part}`}
+            className="rounded-sm bg-amber-300 px-0.5 text-zinc-950"
+          >
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      )}
+    </>
+  );
+}
+
 function GameCard({
   game,
   isRecent,
   isPopular,
+  searchQuery,
   onPlay
 }: {
   game: GameItem;
   isRecent: boolean;
   isPopular: boolean;
+  searchQuery: string;
   onPlay: (game: GameItem) => void;
 }) {
   return (
@@ -611,7 +657,9 @@ function GameCard({
         <div className="mb-2 flex items-start justify-between gap-2">
           <h4 className="flex min-w-0 items-center gap-2 text-base font-semibold text-zinc-100">
             {game.disabled ? (
-              <span className="truncate">{game.name}</span>
+              <span className="truncate">
+                <HighlightText text={game.name} query={searchQuery} />
+              </span>
             ) : (
               <a
                 href={game.url}
@@ -620,7 +668,7 @@ function GameCard({
                 onClick={() => onPlay(game)}
                 className="game-card-link min-w-0 truncate transition-colors group-hover:text-white"
               >
-                {game.name}
+                <HighlightText text={game.name} query={searchQuery} />
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
             )}
@@ -654,7 +702,7 @@ function GameCard({
         </div>
 
         <p className="mb-4 line-clamp-2 flex-1 text-[13px] leading-[18px] text-[#8B9099]">
-          {game.description}
+          <HighlightText text={game.description} query={searchQuery} />
         </p>
 
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-white/[0.06] pt-3">
@@ -665,7 +713,7 @@ function GameCard({
                 style={CHIP_STYLE}
                 className="inline-flex h-6 items-center px-2.5 text-[11px] leading-[14px] text-[#caccd2]"
               >
-                {tag}
+                <HighlightText text={tag} query={searchQuery} />
               </span>
             ))}
           </div>
@@ -826,13 +874,13 @@ export function GameCatalog() {
       list = list.filter((game) => matchesCategory(game, selectedCategory));
     }
     if (!searchQuery.trim()) return list;
-    const q = searchQuery.trim().toLowerCase();
-    return list.filter(
-      (game) =>
-        game.name.toLowerCase().includes(q) ||
-        game.description.toLowerCase().includes(q) ||
-        game.tags.some((tag) => tag.toLowerCase().includes(q))
-    );
+    const terms = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return list.filter((game) => {
+      const searchableText = [game.name, game.description, ...game.tags]
+        .join(" ")
+        .toLowerCase();
+      return terms.every((term) => searchableText.includes(term));
+    });
   }, [games, selectedCategory, searchQuery]);
 
   const playableGames = React.useMemo(
@@ -1006,6 +1054,7 @@ export function GameCatalog() {
                   game={game}
                   isRecent={recentIds.has(game.id)}
                   isPopular={popularGameId === game.id}
+                  searchQuery={searchQuery}
                   onPlay={handleGameClick}
                 />
               ))}
@@ -1027,6 +1076,7 @@ export function GameCatalog() {
                   game={game}
                   isRecent={recentIds.has(game.id)}
                   isPopular={popularGameId === game.id}
+                  searchQuery={searchQuery}
                   onPlay={handleGameClick}
                 />
               ))}

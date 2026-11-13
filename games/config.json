@@ -50,6 +50,20 @@
       "category": "driving"
     },
     {
+      "subdomain": "monster-track",
+      "name": "Monster Track",
+      "url": "https://monster.benlaunches.icu/",
+      "description": "Take a monster truck through off-road courses.",
+      "category": "driving"
+    },
+    {
+      "subdomain": "monster-tracks-2",
+      "name": "Monster Tracks 2",
+      "url": "https://awesometank2.benlaunches.icu/",
+      "description": "Drive monster trucks through off-road courses and obstacles.",
+      "category": "driving"
+    },
+    {
       "subdomain": "moto-x3m",
       "name": "Moto X3M",
       "url": "/games/moto-x3m.html",
