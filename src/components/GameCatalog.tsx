@@ -27,15 +27,27 @@ export const CATEGORY_FILTERS = [
 
 type CategoryId = typeof CATEGORY_FILTERS[number]["id"];
 
-type SortOption = "default" | "popular" | "az" | "recent" | "featured";
+type SortOption = "popular" | "featured" | "recent" | "az" | "default";
+
+const DEFAULT_SORT: SortOption = "popular";
 
 const SORT_OPTIONS: { id: SortOption; label: string }[] = [
-  { id: "default", label: "Default order" },
   { id: "popular", label: "Most played" },
-  { id: "az", label: "Name: A to Z" },
-  { id: "recent", label: "Recently played" },
   { id: "featured", label: "Featured first" },
+  { id: "recent", label: "Recently played" },
+  { id: "az", label: "Name: A to Z" },
+  { id: "default", label: "Default order" },
 ];
+
+function initialSortOption(): SortOption {
+  try {
+    const sort = new URLSearchParams(window.location.search).get("sort");
+    if (sort && SORT_OPTIONS.some((option) => option.id === sort)) {
+      return sort as SortOption;
+    }
+  } catch {}
+  return DEFAULT_SORT;
+}
 
 type RecentGame = { id: string; playedAt: number };
 
@@ -869,12 +881,7 @@ export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [searchQuery, setSearchQuery] = React.useState(initialSearchQuery);
   const [selectedCategory, setSelectedCategory] = React.useState<CategoryId>(initialCategory);
-  const [sortOption, setSortOption] = React.useState<SortOption>(() => {
-    const sort = new URLSearchParams(window.location.search).get("sort");
-    return SORT_OPTIONS.some((option) => option.id === sort)
-      ? (sort as SortOption)
-      : "default";
-  });
+  const [sortOption, setSortOption] = React.useState<SortOption>(initialSortOption);
   const [filterOpen, setFilterOpen] = React.useState(false);
   const filterRef = React.useRef<HTMLDivElement>(null);
   const [popularGameId, setPopularGameId] = React.useState<string | null>(null);
@@ -924,8 +931,16 @@ export function GameCatalog() {
       .then((stats) => {
         if (!stats.length) return;
         const byId = new Map(stats.map((item) => [item.id, item]));
+        const byUrl = new Map(stats.filter((item) => item.url).map((item) => [urlKey(item.url), item]));
+        const byName = new Map(stats.map((item) => [nameKey(item.name), item]));
         setGames((current) =>
-          current.map((game) => ({ ...game, clicks: byId.get(game.id)?.clicks || 0 }))
+          current.map((game) => {
+            const stat =
+              byId.get(game.id) ||
+              (game.url ? byUrl.get(urlKey(game.url)) : undefined) ||
+              byName.get(nameKey(game.name));
+            return stat ? { ...game, clicks: stat.clicks } : game;
+          })
         );
         setPopularGameId(stats[0].id);
       })
@@ -967,7 +982,7 @@ export function GameCatalog() {
       url.searchParams.delete(CATEGORY_PARAM);
     }
 
-    if (sortOption !== "default") url.searchParams.set("sort", sortOption);
+    if (sortOption !== DEFAULT_SORT) url.searchParams.set("sort", sortOption);
     else url.searchParams.delete("sort");
 
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
@@ -1036,7 +1051,11 @@ export function GameCatalog() {
     const sorted = [...items];
     switch (sortOption) {
       case "popular":
-        return sorted.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+        return sorted.sort((a, b) => {
+          const diff = (b.clicks || 0) - (a.clicks || 0);
+          if (diff !== 0) return diff;
+          return Number(!!b.featured) - Number(!!a.featured);
+        });
       case "az":
         return sorted.sort((a, b) => a.name.localeCompare(b.name));
       case "recent": {
@@ -1067,6 +1086,7 @@ export function GameCatalog() {
   const resetAllFilters = React.useCallback(() => {
     setSearchQuery("");
     setSelectedCategory("all");
+    setSortOption(DEFAULT_SORT);
     searchRef.current?.focus();
   }, []);
 
@@ -1181,17 +1201,19 @@ export function GameCatalog() {
                 type="button"
                 aria-haspopup="menu"
                 aria-expanded={filterOpen}
-                aria-label={`Sort games: ${SORT_OPTIONS.find((option) => option.id === sortOption)?.label}`}
+                aria-label={`Sort games: ${SORT_OPTIONS.find((option) => option.id === sortOption)?.label || "Most played"}`}
                 onClick={() => setFilterOpen((open) => !open)}
                 style={CHIP_STYLE}
                 className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-medium transition-colors ${
-                  sortOption !== "default"
+                  sortOption !== DEFAULT_SORT
                     ? "bg-white/[0.12] text-white"
                     : "text-zinc-300 hover:bg-white/[0.08] hover:text-white"
                 }`}
               >
                 <SlidersHorizontal aria-hidden="true" className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Filter</span>
+                <span className="hidden sm:inline">
+                  {SORT_OPTIONS.find((option) => option.id === sortOption)?.label || "Most played"}
+                </span>
               </button>
               {filterOpen && (
                 <div
