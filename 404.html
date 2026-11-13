@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#09090b">
+  <meta name="color-scheme" content="dark">
+  <title>Page Not Found — “Education” Games</title>
+  <meta name="description" content="The page you're looking for might have been moved or doesn't exist.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
+      overflow: hidden;
+      color: #fafafa;
+      background: #09090b;
+      font-family: Geist, Inter, system-ui, sans-serif;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .48;
+      background:
+        radial-gradient(ellipse at 50% 110%, rgba(240, 96, 42, .24), transparent 48%),
+        radial-gradient(circle at 1px 1px, rgba(240, 96, 42, .25) 1px, transparent 1.7px);
+      background-size: auto, 8px 8px;
+      mask-image: linear-gradient(to bottom, transparent 32%, #000 100%);
+    }
+    main {
+      position: relative;
+      width: min(100%, 560px);
+      padding: clamp(32px, 7vw, 56px) 24px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 24px;
+      background: rgba(29, 29, 29, .94);
+      box-shadow: inset 0 0 50px rgba(255, 255, 255, .02), 0 24px 64px rgba(0, 0, 0, .55);
+    }
+    h1 {
+      margin: 0;
+      color: #f4f4f5;
+      font-size: clamp(7rem, 25vw, 10rem);
+      font-weight: 800;
+      letter-spacing: -.09em;
+      line-height: .9;
+      background: linear-gradient(180deg, #fff 15%, #a1a1aa 74%, rgba(161, 161, 170, .18));
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p {
+      max-width: 340px;
+      margin: 24px auto 0;
+      color: #a1a1aa;
+      font-size: 15px;
+      line-height: 1.65;
+      text-wrap: balance;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 28px;
+    }
+    a {
+      display: inline-flex;
+      min-height: 44px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 17px;
+      border: 1px solid rgba(255, 255, 255, .12);
+      border-radius: 999px;
+      color: #e4e4e7;
+      background: rgba(255, 255, 255, .04);
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+    }
+    a:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+    a:active { transform: scale(.98); }
+    a.primary { border-color: #fff; color: #09090b; background: #fff; }
+    a.primary:hover { background: #e4e4e7; }
+    a:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+    svg { width: 16px; height: 16px; flex: none; }
+    @media (prefers-reduced-motion: reduce) {
+      a { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main aria-labelledby="not-found-title">
+    <h1 id="not-found-title">404</h1>
+    <p>The page you’re looking for might have been moved or doesn’t exist.</p>
+    <div class="actions">
+      <a class="primary" href="/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 10 9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/></svg>
+        Go Home
+      </a>
+      <a href="/#games">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="11" r="3"/><path d="M12 22s8-4 8-11a8 8 0 1 0-16 0c0 7 8 11 8 11Z"/></svg>
+        Explore Games
+      </a>
+    </div>
+  </main>
+</body>
+</html>
