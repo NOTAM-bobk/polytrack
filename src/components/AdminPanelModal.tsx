@@ -250,8 +250,6 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) {
@@ -302,6 +300,8 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
     },
     []
   );
+
+  if (!isOpen) return null;
 
   const handleToggleBugTag = async (gameId: string) => {
     // Compute the next value before updating state: React applies updater functions
