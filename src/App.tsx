@@ -12,6 +12,11 @@ import { FeatureTooltips } from "./components/FeatureTooltips";
 import { HalftoneHorizon } from "./components/ui/halftone-horizon";
 import { Compass, Send, Sparkles, Settings, Gamepad2, MessageCircle, Bug, Shield } from "lucide-react";
 import { applyTabCloak, loadTabCloakSettings, saveTabCloakSettings, type TabCloakSettings } from "./lib/tabCloak";
+import {
+  loadBackgroundConfig,
+  onBackgroundConfigChange,
+  type BackgroundConfig,
+} from "./lib/backgroundTheme";
 
 const CHIP_STYLE: React.CSSProperties = {
   borderRadius: 36,
@@ -19,12 +24,60 @@ const CHIP_STYLE: React.CSSProperties = {
   boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
 };
 
+function BackgroundWrapper({
+  config,
+  children,
+}: {
+  config: BackgroundConfig;
+  children: React.ReactNode;
+}) {
+  if (config.type === "shader") {
+    return (
+      <HalftoneHorizon
+        speed={0.25}
+        grain={0.02}
+        interactive={false}
+        className="h-[100dvh] w-full font-sans text-zinc-100"
+      >
+        {children}
+      </HalftoneHorizon>
+    );
+  }
+
+  return (
+    <div
+      className="relative h-[100dvh] w-full font-sans text-zinc-100 overflow-hidden"
+      style={{
+        background: config.value,
+        transition: "background 300ms ease",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 export function App() {
   const [settingsOpen, setSettingsOpen] = React.useState(false);
   const [bugModalOpen, setBugModalOpen] = React.useState(false);
   const [adminModalOpen, setAdminModalOpen] = React.useState(false);
   const [mobilePanel, setMobilePanel] = React.useState<"games" | "chat">("games");
   const [isUnlocked, setIsUnlocked] = React.useState(false);
+  const [bgConfig, setBgConfig] = React.useState<BackgroundConfig>(loadBackgroundConfig);
+
+  React.useEffect(() => {
+    return onBackgroundConfigChange((newConfig) => {
+      setBgConfig(newConfig);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (bgConfig.type === "solid" || bgConfig.type === "gradient") {
+      document.body.style.background = bgConfig.value;
+    } else {
+      document.body.style.background = "#09090b";
+    }
+  }, [bgConfig]);
   const [tabCloakSettings, setTabCloakSettings] = React.useState<TabCloakSettings>(loadTabCloakSettings);
 
   React.useEffect(() => {
@@ -51,12 +104,7 @@ export function App() {
   const isLocked = siteLockEnabled && siteLockPassword.trim().length > 0 && !isUnlocked;
 
   return (
-    <HalftoneHorizon
-      speed={0.25}
-      grain={0.02}
-      interactive={false}
-      className="h-[100dvh] w-full font-sans text-zinc-100"
-    >
+    <BackgroundWrapper config={bgConfig}>
       {isLocked && <SiteLock onUnlock={() => setIsUnlocked(true)} />}
 
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
@@ -283,6 +331,6 @@ export function App() {
       />
 
       <FeatureTooltips />
-    </HalftoneHorizon>
+    </BackgroundWrapper>
   );
 }

@@ -175,7 +175,9 @@ export function AdminPanelModal({ isOpen, onClose }: AdminPanelModalProps) {
         return false;
       }
 
-      setBugs(Array.isArray(data.bugs) ? data.bugs : (Array.isArray(data.items) ? data.items : []));
+      const rawBugs = Array.isArray(data.bugs) ? data.bugs : (Array.isArray(data.items) ? data.items : []);
+      const userBugs = rawBugs.filter((b: any) => b.title !== "__POLYTRACK_GAME_FLAGS__");
+      setBugs(userBugs);
       setIsAuthenticated(true);
       sessionStorage.setItem("polytrack_admin_session_pwd", pwd);
 

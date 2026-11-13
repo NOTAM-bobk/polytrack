@@ -3,6 +3,14 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/games/flags",
+      "destination": "/api/flags"
+    },
+    {
+      "source": "/api/games/flags/",
+      "destination": "/api/flags"
+    },
+    {
       "source": "/api/hub/messages",
       "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/messages"
     },
@@ -36,19 +44,19 @@
     },
     {
       "source": "/api/hub/games/flags",
-      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/games/flags"
+      "destination": "/api/flags"
     },
     {
       "source": "/api/hub/games/flags/",
-      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/games/flags"
+      "destination": "/api/flags"
     },
     {
       "source": "/api/hub/admin/flags",
-      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/flags"
+      "destination": "/api/flags"
     },
     {
       "source": "/api/hub/admin/flags/",
-      "destination": "https://polytrack-hub-api.sawyerbobk563.workers.dev/api/admin/flags"
+      "destination": "/api/flags"
     },
     {
       "source": "/api/hub/:path*",

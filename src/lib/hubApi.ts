@@ -64,11 +64,26 @@ export async function recordGameClick(game: { id: string; name: string; url: str
 }
 
 /**
- * Loads game flags (verified and bug-tagged) from the Cloudflare backend.
- * Public endpoint, available to all visitors and devices.
+ * Loads game flags (verified and bug-tagged) via the Vercel serverless proxy.
+ * Works reliably on school networks because requests stay on the site's own domain.
  */
 export async function loadGameFlags(): Promise<GameFlagsData> {
-  // 1. Try same-origin rewritten path
+  // 1. Try Vercel /api/flags
+  try {
+    const res = await fetch("/api/flags", {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        verified: Array.isArray(data.verified) ? data.verified : [],
+        buggy: Array.isArray(data.buggy) ? data.buggy : [],
+      };
+    }
+  } catch {}
+
+  // 2. Try rewritten /api/hub/games/flags
   try {
     const res = await fetch(`${HUB_API}/games/flags`, {
       headers: { Accept: "application/json" },
@@ -83,27 +98,12 @@ export async function loadGameFlags(): Promise<GameFlagsData> {
     }
   } catch {}
 
-  // 2. Fallback directly to Cloudflare Worker
-  try {
-    const directRes = await fetch(`${WORKER_ORIGIN}/api/games/flags`, {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-    if (directRes.ok) {
-      const data = await directRes.json();
-      return {
-        verified: Array.isArray(data.verified) ? data.verified : [],
-        buggy: Array.isArray(data.buggy) ? data.buggy : [],
-      };
-    }
-  } catch {}
-
-  throw new Error("Game flags are unavailable from the Cloudflare backend");
+  return { verified: [], buggy: [] };
 }
 
 /**
- * Updates game flags (verified or bug-tagged) on the Cloudflare backend.
- * Protected by admin password.
+ * Updates game flags (verified or bug-tagged) via the Vercel serverless proxy.
+ * Protected by admin password and routed server-side to Cloudflare.
  */
 export async function updateAdminGameFlags(
   pwd: string,
@@ -116,7 +116,7 @@ export async function updateAdminGameFlags(
 ): Promise<GameFlagsData> {
   const reqBody = { ...payload, target: "flags", password: pwd };
 
-  // 1. Try Vercel /api/admin function
+  // 1. Primary: Send through Vercel /api/admin function
   let res: Response | null = null;
   try {
     res = await fetch("/api/admin", {
@@ -131,10 +131,10 @@ export async function updateAdminGameFlags(
     res = null;
   }
 
-  // 2. Fallback to /api/hub/admin/flags
-  if (!res || res.status === 404 || !res.ok) {
+  // 2. Fallback: Send through Vercel /api/flags
+  if (!res || !res.ok) {
     try {
-      const directHubRes = await fetch(`${HUB_API}/admin/flags`, {
+      const flagsRes = await fetch("/api/flags", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -142,32 +142,15 @@ export async function updateAdminGameFlags(
         },
         body: JSON.stringify(reqBody),
       });
-      if (directHubRes.ok) {
-        res = directHubRes;
-      }
-    } catch {}
-  }
-
-  // 3. Fallback direct to Cloudflare Worker
-  if (!res || res.status === 404 || !res.ok) {
-    try {
-      const directWorkerRes = await fetch(`${WORKER_ORIGIN}/api/admin/flags`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Admin-Password": pwd,
-        },
-        body: JSON.stringify(reqBody),
-      });
-      if (directWorkerRes.ok) {
-        res = directWorkerRes;
+      if (flagsRes.ok) {
+        res = flagsRes;
       }
     } catch {}
   }
 
   if (!res || !res.ok) {
     const errData = res ? await res.json().catch(() => ({})) : {};
-    throw new Error(errData.error || "Failed to update flags on Cloudflare backend");
+    throw new Error(errData.error || "Failed to update flags through Vercel proxy");
   }
 
   const data = await res.json();

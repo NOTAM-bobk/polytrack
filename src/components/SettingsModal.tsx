@@ -1,5 +1,12 @@
 import * as React from "react";
-import { X, Lock, ShieldAlert, Check, Key, ShieldCheck, Eye, EyeOff, BellOff } from "lucide-react";
+import { X, Lock, ShieldAlert, Check, Key, ShieldCheck, Eye, EyeOff, BellOff, Palette, Sparkles, Pipette } from "lucide-react";
+import {
+  BACKGROUND_PRESETS,
+  loadBackgroundConfig,
+  saveBackgroundConfig,
+  type BackgroundConfig,
+  type BackgroundType,
+} from "@/lib/backgroundTheme";
 import { areNotificationAdsBlocked, setNotificationAdsBlocked } from "@/lib/adNotifications";
 import type { TabCloakSettings } from "@/lib/tabCloak";
 
@@ -54,6 +61,15 @@ export function SettingsModal({
   const [showPassword, setShowPassword] = React.useState(false);
   const [lockSaved, setLockSaved] = React.useState(false);
   const [lockError, setLockError] = React.useState("");
+
+  // Background & Theme states
+  const [bgConfig, setBgConfig] = React.useState<BackgroundConfig>(loadBackgroundConfig);
+  const [bgTab, setBgTab] = React.useState<BackgroundType>(() => loadBackgroundConfig().type);
+  const [customSolidHex, setCustomSolidHex] = React.useState(() => {
+    const current = loadBackgroundConfig();
+    return current.type === "solid" && current.id === "custom-solid" ? current.value : "#09090b";
+  });
+  const [bgNotice, setBgNotice] = React.useState<string | null>(null);
 
   // Notification ads
   const [adsBlocked, setAdsBlocked] = React.useState(areNotificationAdsBlocked);
@@ -152,6 +168,36 @@ export function SettingsModal({
     }
     setLockSaved(true);
     setTimeout(() => setLockSaved(false), 2200);
+  };
+
+  const handleSelectPreset = (preset: (typeof BACKGROUND_PRESETS)[number]) => {
+    const next: BackgroundConfig = {
+      type: preset.type,
+      id: preset.id,
+      value: preset.value,
+    };
+    setBgConfig(next);
+    saveBackgroundConfig(next);
+    setBgNotice("Applied " + preset.name);
+    setTimeout(() => setBgNotice(null), 2000);
+  };
+
+  const handleApplyCustomSolid = (hex: string) => {
+    let cleanHex = hex.trim();
+    if (!cleanHex.startsWith("#")) cleanHex = "#" + cleanHex;
+    if (!/^#[0-9A-Fa-f]{6}$/.test(cleanHex) && !/^#[0-9A-Fa-f]{3}$/.test(cleanHex)) {
+      return;
+    }
+    const next: BackgroundConfig = {
+      type: "solid",
+      id: "custom-solid",
+      value: cleanHex,
+    };
+    setBgConfig(next);
+    setCustomSolidHex(cleanHex);
+    saveBackgroundConfig(next);
+    setBgNotice("Applied custom background");
+    setTimeout(() => setBgNotice(null), 2000);
   };
 
   const handleToggleAds = () => {
@@ -398,7 +444,239 @@ export function SettingsModal({
           </div>
         </div>
 
-        {/* Section 2: Notification ads */}
+        {/* Section 2: Background Controls (Solids, Gradients, Shaders) */}
+        <section className="flex flex-col gap-3 border-t border-white/[0.08] pt-3" aria-labelledby="background-controls-title">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div
+                style={{
+                  borderRadius: 36,
+                  background: "rgba(168, 85, 247, 0.12)",
+                  boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+                }}
+                className="p-1.5 text-purple-400"
+              >
+                <Palette aria-hidden="true" className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 text-sm font-semibold text-zinc-100">
+                  <span id="background-controls-title">Background Style</span>
+                  {bgNotice && (
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-300 animate-fade-in">
+                      {bgNotice}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-zinc-400">
+                  Change site background to animated shader, solid colors, or deep gradients
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              borderRadius: 14,
+              background: "rgba(0, 0, 0, 0.3)",
+              boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.04)",
+              padding: "12px",
+            }}
+            className="flex flex-col gap-3"
+          >
+            {/* Background Category Tabs */}
+            <div className="flex items-center gap-1.5 rounded-xl bg-black/40 p-1 ring-1 ring-inset ring-white/[0.06]">
+              <button
+                type="button"
+                onClick={() => setBgTab("shader")}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                  bgTab === "shader"
+                    ? "bg-white/[0.12] text-white shadow-sm ring-1 ring-inset ring-white/10"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                }`}
+              >
+                Halftone Shader
+              </button>
+              <button
+                type="button"
+                onClick={() => setBgTab("solid")}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                  bgTab === "solid"
+                    ? "bg-white/[0.12] text-white shadow-sm ring-1 ring-inset ring-white/10"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                }`}
+              >
+                Solid Colors
+              </button>
+              <button
+                type="button"
+                onClick={() => setBgTab("gradient")}
+                className={`flex-1 rounded-lg py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                  bgTab === "gradient"
+                    ? "bg-white/[0.12] text-white shadow-sm ring-1 ring-inset ring-white/10"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                }`}
+              >
+                Gradients
+              </button>
+            </div>
+
+            {/* TAB 1: Shader */}
+            {bgTab === "shader" && (
+              <div className="flex flex-col gap-2">
+                {BACKGROUND_PRESETS.filter((p) => p.type === "shader").map((preset) => {
+                  const isSelected = bgConfig.type === "shader" && bgConfig.id === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleSelectPreset(preset)}
+                      className={`flex items-center justify-between gap-3 rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-white/[0.09] ring-2 ring-emerald-400/80 shadow-[0_4px_16px_rgba(0,0,0,0.5)]"
+                          : "bg-white/[0.03] ring-1 ring-white/[0.06] hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          style={{
+                            background: preset.preview,
+                            borderRadius: 10,
+                            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.2), 0 2px 6px rgba(0,0,0,0.4)",
+                          }}
+                          className="h-10 w-10 shrink-0"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-100">
+                            <span>{preset.name}</span>
+                            <Sparkles className="w-3 h-3 text-amber-400" />
+                          </div>
+                          <div className="text-[11px] text-zinc-400">{preset.description}</div>
+                        </div>
+                      </div>
+                      {isSelected ? (
+                        <div className="flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-medium text-emerald-300 border border-emerald-500/30">
+                          <Check className="w-3 h-3" />
+                          <span>Active</span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-zinc-500 hover:text-zinc-300">Select</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* TAB 2: Solid Colors */}
+            {bgTab === "solid" && (
+              <div className="flex flex-col gap-2.5">
+                <div className="grid grid-cols-2 gap-2">
+                  {BACKGROUND_PRESETS.filter((p) => p.type === "solid").map((preset) => {
+                    const isSelected = bgConfig.type === "solid" && bgConfig.id === preset.id;
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleSelectPreset(preset)}
+                        className={`flex items-center gap-2.5 rounded-xl p-2 text-left transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-white/[0.1] ring-2 ring-emerald-400/80 shadow-[0_2px_10px_rgba(0,0,0,0.5)]"
+                            : "bg-white/[0.03] ring-1 ring-white/[0.06] hover:bg-white/[0.06]"
+                        }`}
+                      >
+                        <div
+                          style={{
+                            background: preset.preview,
+                            borderRadius: 8,
+                            boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15), 0 2px 4px rgba(0,0,0,0.4)",
+                          }}
+                          className="h-6 w-6 shrink-0 relative flex items-center justify-center"
+                        >
+                          {isSelected && <Check className="w-3.5 h-3.5 text-emerald-400 drop-shadow" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-xs font-medium text-zinc-200">{preset.name}</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Custom Color Input */}
+                <div className="flex items-center gap-2 border-t border-white/[0.06] pt-2">
+                  <div className="relative flex items-center gap-1.5 flex-1 min-w-0">
+                    <input
+                      type="color"
+                      value={customSolidHex}
+                      onChange={(e) => {
+                        setCustomSolidHex(e.target.value);
+                        handleApplyCustomSolid(e.target.value);
+                      }}
+                      className="h-7 w-7 rounded-lg cursor-pointer bg-transparent border-0 p-0"
+                      title="Pick custom color"
+                    />
+                    <input
+                      type="text"
+                      value={customSolidHex}
+                      onChange={(e) => setCustomSolidHex(e.target.value)}
+                      placeholder="#09090b"
+                      maxLength={7}
+                      className="flex-1 rounded-lg bg-white/[0.04] px-2.5 py-1 font-mono text-xs text-zinc-100 ring-1 ring-inset ring-white/[0.08] focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyCustomSolid(customSolidHex)}
+                    className="cursor-pointer rounded-lg bg-white px-3 py-1 text-xs font-semibold text-zinc-950 transition-colors hover:bg-zinc-100 active:scale-95"
+                  >
+                    Set Color
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: Gradients */}
+            {bgTab === "gradient" && (
+              <div className="grid grid-cols-2 gap-2">
+                {BACKGROUND_PRESETS.filter((p) => p.type === "gradient").map((preset) => {
+                  const isSelected = bgConfig.type === "gradient" && bgConfig.id === preset.id;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleSelectPreset(preset)}
+                      className={`flex flex-col gap-1.5 rounded-xl p-2 text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-white/[0.1] ring-2 ring-emerald-400/80 shadow-[0_4px_16px_rgba(0,0,0,0.5)]"
+                          : "bg-white/[0.03] ring-1 ring-white/[0.06] hover:bg-white/[0.06]"
+                      }`}
+                    >
+                      <div
+                        style={{
+                          background: preset.preview,
+                          borderRadius: 8,
+                          boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.15), 0 2px 6px rgba(0,0,0,0.5)",
+                        }}
+                        className="h-10 w-full relative flex items-center justify-center overflow-hidden"
+                      >
+                        {isSelected && (
+                          <span className="rounded-full bg-black/60 backdrop-blur-sm p-1 text-emerald-400 shadow">
+                            <Check className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="truncate text-xs font-medium text-zinc-200">{preset.name}</div>
+                      <div className="truncate text-[10px] text-zinc-500">{preset.description}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Section 3: Notification ads */}
+
         <div className="flex flex-col gap-3 border-t border-white/[0.08] pt-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">

@@ -114,7 +114,12 @@ module.exports = async function handler(req, res) {
         body.action.includes("flag")
       ));
 
-    const endpoint = isFlagsAction ? "/api/admin/flags" : "/api/admin/bugs";
+    if (isFlagsAction) {
+      const flagsHandler = require("./flags");
+      return flagsHandler(req, res);
+    }
+
+    const endpoint = "/api/admin/bugs";
     const upstreamUrl = new URL(endpoint, WORKER_ORIGIN);
     const upstreamRes = await fetch(upstreamUrl.toString(), {
       method: "POST",
