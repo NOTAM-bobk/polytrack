@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check, Star } from "lucide-react";
 import { loadGameStats, recordGameClick } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
@@ -14,8 +14,22 @@ const CHIP_STYLE: React.CSSProperties = {
   boxShadow: "inset 0 0 0 1px rgba(255, 255, 255, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
 };
 
+const FAVORITES_GAMES_KEY = "polytrack_favorite_games";
+
+function loadFavorites(): string[] {
+  try {
+    const raw = localStorage.getItem(FAVORITES_GAMES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 export const CATEGORY_FILTERS = [
   { id: "all", label: "All Games" },
+  { id: "favorites", label: "⭐ Favorites" },
   { id: "flash", label: "⚡ Flash" },
   { id: "action", label: "⚔️ Action" },
   { id: "driving", label: "🏎️ Driving" },
@@ -102,6 +116,7 @@ export interface GameItem {
   badge?: string;
   badgeColor?: string;
   clicks?: number;
+  editorsPick?: boolean;
 }
 
 function nameKey(name: string) {
@@ -158,7 +173,8 @@ export function mergeCatalog(defaults: GameItem[], loaded: GameItem[]): GameItem
         match.description && !match.description.includes("from games catalog")
           ? match.description
           : item.description,
-      disabled: match.disabled ?? item.disabled
+      disabled: match.disabled ?? item.disabled,
+      editorsPick: match.editorsPick ?? item.editorsPick
     });
   }
 
@@ -186,14 +202,16 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Retro Bowl",
     url: "/games/retro-bowl.html",
     description: "Manage your NFL team, draft players, call the plays on offense, and win the championship in this retro football sim.",
-    tags: ["Sports", "Football", "Retro", "Arcade", "Management"]
+    tags: ["Sports", "Football", "Retro", "Arcade", "Management"],
+    editorsPick: true
   },
   {
     id: "game-drive-mad",
     name: "Drive Mad",
     url: "/games/drive-mad.html",
     description: "Navigate wild 3D obstacle courses balancing throttle, stunts, jumps, and vehicle physics.",
-    tags: ["Driving", "3D Physics", "Stunts", "Obstacles"]
+    tags: ["Driving", "3D Physics", "Stunts", "Obstacles"],
+    editorsPick: true
   },
   {
     id: "game-moto-x3m",
@@ -270,7 +288,8 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Cookie Clicker",
     url: "/games/cookie-clicker.html",
     description: "Bake cookies, hire grandmas, build factories, and construct an astronomical cookie empire.",
-    tags: ["Casual", "Idle", "Clicker", "Management"]
+    tags: ["Casual", "Idle", "Clicker", "Management"],
+    editorsPick: true
   },
   {
     id: "game-2048",
@@ -396,7 +415,8 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Learn to Fly",
     url: "/games/learn-to-fly.html",
     description: "Upgrade your glider, rockets, and ramp to help a determined penguin soar over Antarctica.",
-    tags: ["Flash", "Casual", "Upgrade", "Launcher"]
+    tags: ["Flash", "Casual", "Upgrade", "Launcher"],
+    editorsPick: true
   },
   {
     id: "game-papas-pizzeria",
@@ -487,7 +507,8 @@ export const DEFAULT_GAMES: GameItem[] = [
     name: "Geometry Dash",
     url: "/games/geometry-dash.html",
     description: "Jump, fly, and flip your way through dangerous geometric passages and spiky obstacles to the beat.",
-    tags: ["Arcade", "Rhythm", "Platformer", "Skill", "Hard"]
+    tags: ["Arcade", "Rhythm", "Platformer", "Skill", "Hard"],
+    editorsPick: true
   },
   {
     id: "game-basket-random",
@@ -763,14 +784,18 @@ function GameCard({
   game,
   isRecent,
   isPopular,
+  isFavorite,
   searchQuery,
-  onPlay
+  onPlay,
+  onToggleFavorite
 }: {
   game: GameItem;
   isRecent: boolean;
   isPopular: boolean;
+  isFavorite: boolean;
   searchQuery: string;
   onPlay: (game: GameItem) => void;
+  onToggleFavorite: (id: string, event?: React.MouseEvent) => void;
 }) {
   return (
     <article
@@ -781,7 +806,7 @@ function GameCard({
     >
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="mb-2 flex items-start justify-between gap-2">
-          <h4 className="flex min-w-0 items-center gap-2 text-base font-semibold text-zinc-100">
+          <h4 className="flex min-w-0 flex-wrap items-center gap-2 text-base font-semibold text-zinc-100">
             {game.disabled ? (
               <span className="truncate">
                 <HighlightText text={game.name} query={searchQuery} />
@@ -797,6 +822,21 @@ function GameCard({
                 <HighlightText text={game.name} query={searchQuery} />
                 <span className="sr-only"> (opens in a new tab)</span>
               </a>
+            )}
+            {game.editorsPick && (
+              <span
+                title="Editor's Pick"
+                style={{
+                  ...CHIP_STYLE,
+                  background: "linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.12))",
+                  border: "1px solid rgba(245, 158, 11, 0.35)",
+                  color: "#fde68a"
+                }}
+                className="inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-[10.5px] font-semibold tracking-wide"
+              >
+                <Sparkles aria-hidden="true" className="h-3 w-3 text-amber-300" />
+                <span>Editor's Pick</span>
+              </span>
             )}
             {isRecent && (
               <span
@@ -817,14 +857,32 @@ function GameCard({
               </span>
             )}
           </h4>
-          {game.version && (
-            <span
-              style={CHIP_STYLE}
-              className="shrink-0 px-2.5 py-0.5 font-mono text-[11px] text-[#caccd2]"
+          <div className="flex shrink-0 items-center gap-1.5">
+            {game.version && (
+              <span
+                style={CHIP_STYLE}
+                className="shrink-0 px-2.5 py-0.5 font-mono text-[11px] text-[#caccd2]"
+              >
+                {game.version}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={(e) => onToggleFavorite(game.id, e)}
+              aria-label={isFavorite ? `Remove ${game.name} from favorites` : `Add ${game.name} to favorites`}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              className="group/fav inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-400 transition-all hover:bg-white/[0.08] hover:text-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 active:scale-90"
             >
-              {game.version}
-            </span>
-          )}
+              <Star
+                aria-hidden="true"
+                className={`h-4 w-4 transition-colors ${
+                  isFavorite
+                    ? "fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
+                    : "stroke-[1.75] text-zinc-400 group-hover/fav:text-amber-300"
+                }`}
+              />
+            </button>
+          </div>
         </div>
 
         <p className="mb-4 line-clamp-2 flex-1 text-[13px] leading-[18px] text-[#8B9099]">
@@ -888,6 +946,26 @@ export function GameCatalog() {
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
   );
+  const [favoriteIds, setFavoriteIds] = React.useState<Set<string>>(() => new Set(loadFavorites()));
+
+  const toggleFavorite = React.useCallback((id: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      try {
+        localStorage.setItem(FAVORITES_GAMES_KEY, JSON.stringify(Array.from(next)));
+      } catch {}
+      return next;
+    });
+  }, []);
   const searchRef = React.useRef<HTMLInputElement>(null);
 
   const markGamePlayed = React.useCallback((id: string) => {
@@ -917,7 +995,8 @@ export function GameCatalog() {
             url: g.url || "#",
             description: g.description || `${g.name} game from games catalog.`,
             tags: g.category ? [g.category.toUpperCase(), "Web"] : ["Catalog", "Web"],
-            disabled: !!g.disabled
+            disabled: !!g.disabled,
+            editorsPick: !!g.editorsPick
           }));
 
           setGames((prev) => mergeCatalog(prev, loaded));
@@ -1030,7 +1109,9 @@ export function GameCatalog() {
 
   const filteredGames = React.useMemo(() => {
     let list = games;
-    if (selectedCategory !== "all") {
+    if (selectedCategory === "favorites") {
+      list = list.filter((game) => favoriteIds.has(game.id));
+    } else if (selectedCategory !== "all") {
       list = list.filter((game) => matchesCategory(game, selectedCategory));
     }
     if (!searchQuery.trim()) return list;
@@ -1041,7 +1122,7 @@ export function GameCatalog() {
         .toLowerCase();
       return terms.every((term) => searchableText.includes(term));
     });
-  }, [games, selectedCategory, searchQuery]);
+  }, [games, selectedCategory, favoriteIds, searchQuery]);
 
   const playableGames = React.useMemo(
     () => filteredGames.filter((game) => !game.disabled),
@@ -1054,6 +1135,7 @@ export function GameCatalog() {
         return sorted.sort((a, b) => {
           const diff = (b.clicks || 0) - (a.clicks || 0);
           if (diff !== 0) return diff;
+          if (!!b.editorsPick !== !!a.editorsPick) return Number(!!b.editorsPick) - Number(!!a.editorsPick);
           return Number(!!b.featured) - Number(!!a.featured);
         });
       case "az":
@@ -1063,7 +1145,10 @@ export function GameCatalog() {
         return sorted.sort((a, b) => (playedAt.get(b.id) || 0) - (playedAt.get(a.id) || 0));
       }
       case "featured":
-        return sorted.sort((a, b) => Number(!!b.featured) - Number(!!a.featured));
+        return sorted.sort((a, b) => {
+          if (!!b.editorsPick !== !!a.editorsPick) return Number(!!b.editorsPick) - Number(!!a.editorsPick);
+          return Number(!!b.featured) - Number(!!a.featured);
+        });
       default:
         return sorted;
     }
@@ -1182,7 +1267,7 @@ export function GameCatalog() {
                       ...CHIP_STYLE,
                       borderRadius: 20,
                       background: active ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
-                      color: active ? "#09090b" : "#d4d4d8",
+                      color: active ? "#09090b" : cat.id === "favorites" && favoriteIds.size > 0 ? "#fbbf24" : "#d4d4d8",
                       fontWeight: active ? 600 : 500,
                       boxShadow: active
                         ? "0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4)"
@@ -1190,7 +1275,12 @@ export function GameCatalog() {
                     }}
                     className="inline-flex shrink-0 items-center gap-1 px-3 py-1 text-[11px] transition-all hover:text-white active:scale-95"
                   >
-                    {cat.label}
+                    <span>{cat.label}</span>
+                    {cat.id === "favorites" && favoriteIds.size > 0 && (
+                      <span className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-mono leading-tight ${active ? "bg-zinc-900/10 text-zinc-900 font-bold" : "bg-amber-400/20 text-amber-300"}`}>
+                        {favoriteIds.size}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -1304,8 +1394,10 @@ export function GameCatalog() {
                   game={game}
                   isRecent={recentIds.has(game.id)}
                   isPopular={popularGameId === game.id}
+                  isFavorite={favoriteIds.has(game.id)}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
+                  onToggleFavorite={toggleFavorite}
                 />
               ))}
             </section>
@@ -1326,8 +1418,10 @@ export function GameCatalog() {
                   game={game}
                   isRecent={recentIds.has(game.id)}
                   isPopular={popularGameId === game.id}
+                  isFavorite={favoriteIds.has(game.id)}
                   searchQuery={searchQuery}
                   onPlay={handleGameClick}
+                  onToggleFavorite={toggleFavorite}
                 />
               ))}
             </section>
@@ -1335,15 +1429,29 @@ export function GameCatalog() {
 
           {filteredGames.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-12 text-center">
-              <Gamepad2 className="h-8 w-8 text-zinc-600" aria-hidden="true" />
-              <p className="text-sm font-medium text-zinc-300">
-                No games match your filters
-              </p>
-              <p className="max-w-[16rem] text-xs leading-relaxed text-zinc-500">
-                {searchQuery
-                  ? `No games found for "${searchQuery}" in ${selectedCategory}.`
-                  : "No games found in this category."}
-              </p>
+              {selectedCategory === "favorites" ? (
+                <>
+                  <Star className="h-8 w-8 text-amber-400/50" aria-hidden="true" />
+                  <p className="text-sm font-medium text-zinc-300">
+                    No favorite games yet
+                  </p>
+                  <p className="max-w-[18rem] text-xs leading-relaxed text-zinc-500">
+                    Click the star on any game card to bookmark your favorites for quick access!
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Gamepad2 className="h-8 w-8 text-zinc-600" aria-hidden="true" />
+                  <p className="text-sm font-medium text-zinc-300">
+                    No games match your filters
+                  </p>
+                  <p className="max-w-[16rem] text-xs leading-relaxed text-zinc-500">
+                    {searchQuery
+                      ? `No games found for "${searchQuery}" in ${selectedCategory}.`
+                      : "No games found in this category."}
+                  </p>
+                </>
+              )}
               <button
                 type="button"
                 onClick={resetAllFilters}

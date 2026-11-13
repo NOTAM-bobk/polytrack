@@ -40,14 +40,16 @@
       "name": "Retro Bowl",
       "url": "/games/retro-bowl.html",
       "description": "Call plays on offense, manage your roster, and win the championship in this retro football sim.",
-      "category": "sports"
+      "category": "sports",
+      "editorsPick": true
     },
     {
       "subdomain": "drive-mad",
       "name": "Drive Mad",
       "url": "/games/drive-mad.html",
       "description": "Navigate wild 3D obstacle courses balancing throttle, stunts, and vehicle physics.",
-      "category": "driving"
+      "category": "driving",
+      "editorsPick": true
     },
     {
       "subdomain": "monster-track",
@@ -131,7 +133,8 @@
       "name": "Cookie Clicker",
       "url": "/games/cookie-clicker.html",
       "description": "Bake cookies, hire grandmas, and build an astronomical cookie empire.",
-      "category": "casual"
+      "category": "casual",
+      "editorsPick": true
     },
     {
       "subdomain": "2048",
@@ -222,7 +225,8 @@
       "name": "Learn to Fly",
       "url": "/games/learn-to-fly.html",
       "description": "Upgrade your glider, rockets, and ramp to help a determined penguin soar.",
-      "category": "arcade"
+      "category": "arcade",
+      "editorsPick": true
     },
     {
       "subdomain": "papas-pizzeria",
@@ -309,7 +313,8 @@
         "Skill",
         "Hard"
       ],
-      "category": "arcade"
+      "category": "arcade",
+      "editorsPick": true
     },
     {
       "name": "Basket Random",
