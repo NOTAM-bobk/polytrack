@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles } from "lucide-react";
+import { Search, Play, Gamepad2, Clock3, RotateCcw, X, Flame, Sparkles, SlidersHorizontal, Check } from "lucide-react";
 import { loadGameStats, recordGameClick } from "@/lib/hubApi";
 
 const RECENT_GAMES_KEY = "polytrack_recent_games";
@@ -26,6 +26,16 @@ export const CATEGORY_FILTERS = [
 ] as const;
 
 type CategoryId = typeof CATEGORY_FILTERS[number]["id"];
+
+type SortOption = "default" | "popular" | "az" | "recent" | "featured";
+
+const SORT_OPTIONS: { id: SortOption; label: string }[] = [
+  { id: "default", label: "Default order" },
+  { id: "popular", label: "Most played" },
+  { id: "az", label: "Name: A to Z" },
+  { id: "recent", label: "Recently played" },
+  { id: "featured", label: "Featured first" },
+];
 
 type RecentGame = { id: string; playedAt: number };
 
@@ -755,6 +765,14 @@ export function GameCatalog() {
   const [games, setGames] = React.useState<GameItem[]>(DEFAULT_GAMES);
   const [searchQuery, setSearchQuery] = React.useState(initialSearchQuery);
   const [selectedCategory, setSelectedCategory] = React.useState<CategoryId>(initialCategory);
+  const [sortOption, setSortOption] = React.useState<SortOption>(() => {
+    const sort = new URLSearchParams(window.location.search).get("sort");
+    return SORT_OPTIONS.some((option) => option.id === sort)
+      ? (sort as SortOption)
+      : "default";
+  });
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const filterRef = React.useRef<HTMLDivElement>(null);
   const [popularGameId, setPopularGameId] = React.useState<string | null>(null);
   const [recentIds, setRecentIds] = React.useState<Set<string>>(
     () => new Set(loadRecentGames().map((entry) => entry.id))
@@ -845,8 +863,31 @@ export function GameCatalog() {
       url.searchParams.delete(CATEGORY_PARAM);
     }
 
+    if (sortOption !== "default") url.searchParams.set("sort", sortOption);
+    else url.searchParams.delete("sort");
+
     window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, sortOption]);
+
+  React.useEffect(() => {
+    if (!filterOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [filterOpen]);
 
   // "/" jumps to search from anywhere on the page, the usual shortcut in game libraries.
   React.useEffect(() => {
@@ -887,9 +928,31 @@ export function GameCatalog() {
     () => filteredGames.filter((game) => !game.disabled),
     [filteredGames]
   );
+  const sortGames = React.useCallback((items: GameItem[]) => {
+    const sorted = [...items];
+    switch (sortOption) {
+      case "popular":
+        return sorted.sort((a, b) => (b.clicks || 0) - (a.clicks || 0));
+      case "az":
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case "recent": {
+        const playedAt = new Map(loadRecentGames().map((entry) => [entry.id, entry.playedAt]));
+        return sorted.sort((a, b) => (playedAt.get(b.id) || 0) - (playedAt.get(a.id) || 0));
+      }
+      case "featured":
+        return sorted.sort((a, b) => Number(!!b.featured) - Number(!!a.featured));
+      default:
+        return sorted;
+    }
+  }, [sortOption]);
+
+  const sortedPlayableGames = React.useMemo(
+    () => sortGames(playableGames),
+    [playableGames, sortGames]
+  );
   const comingSoonGames = React.useMemo(
-    () => filteredGames.filter((game) => game.disabled),
-    [filteredGames]
+    () => sortGames(filteredGames.filter((game) => game.disabled)),
+    [filteredGames, sortGames]
   );
 
   const clearSearch = React.useCallback(() => {
@@ -975,36 +1038,86 @@ export function GameCatalog() {
         </div>
 
         {/* Category Filter Chips Bar near search */}
-        <div
-          role="tablist"
-          aria-label="Filter games by category"
-          className="flex items-center gap-1.5 overflow-x-auto pt-0.5 pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        >
-          {CATEGORY_FILTERS.map((cat) => {
-            const active = selectedCategory === cat.id;
-            return (
+        <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <div
+              role="tablist"
+              aria-label="Filter games by category"
+              className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto pt-0.5 pb-0.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {CATEGORY_FILTERS.map((cat) => {
+                const active = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    style={{
+                      ...CHIP_STYLE,
+                      borderRadius: 20,
+                      background: active ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
+                      color: active ? "#09090b" : "#d4d4d8",
+                      fontWeight: active ? 600 : 500,
+                      boxShadow: active
+                        ? "0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4)"
+                        : "inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
+                    }}
+                    className="inline-flex shrink-0 items-center gap-1 px-3 py-1 text-[11px] transition-all hover:text-white active:scale-95"
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative shrink-0" ref={filterRef}>
               <button
-                key={cat.id}
                 type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setSelectedCategory(cat.id)}
-                style={{
-                  ...CHIP_STYLE,
-                  borderRadius: 20,
-                  background: active ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
-                  color: active ? "#09090b" : "#d4d4d8",
-                  fontWeight: active ? 600 : 500,
-                  boxShadow: active
-                    ? "0 2px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.4)"
-                    : "inset 0 0 0 1px rgba(255, 255, 255, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.04)",
-                }}
-                className="inline-flex shrink-0 items-center gap-1 px-3 py-1 text-[11px] transition-all hover:text-white active:scale-95"
+                aria-haspopup="menu"
+                aria-expanded={filterOpen}
+                aria-label={`Sort games: ${SORT_OPTIONS.find((option) => option.id === sortOption)?.label}`}
+                onClick={() => setFilterOpen((open) => !open)}
+                style={CHIP_STYLE}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[11px] font-medium transition-colors ${
+                  sortOption !== "default"
+                    ? "bg-white/[0.12] text-white"
+                    : "text-zinc-300 hover:bg-white/[0.08] hover:text-white"
+                }`}
               >
-                {cat.label}
+                <SlidersHorizontal aria-hidden="true" className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Filter</span>
               </button>
-            );
-          })}
+              {filterOpen && (
+                <div
+                  role="menu"
+                  aria-label="Sort games"
+                  className="absolute right-0 top-full z-30 mt-2 min-w-44 overflow-hidden rounded-xl border border-white/[0.08] bg-[#1d1d1d] p-1.5 shadow-2xl"
+                >
+                  {SORT_OPTIONS.map((option) => {
+                    const active = sortOption === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={active}
+                        onClick={() => {
+                          setSortOption(option.id);
+                          setFilterOpen(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-xs text-zinc-200 transition-colors hover:bg-white/[0.08] focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+                      >
+                        <span>{option.label}</span>
+                        {active && <Check aria-hidden="true" className="h-3.5 w-3.5 text-amber-300" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1048,7 +1161,7 @@ export function GameCatalog() {
                 <span aria-hidden="true" className="h-px flex-1 bg-white/[0.07]" />
                 <span className="text-[11px] tabular-nums text-zinc-500">{playableGames.length}</span>
               </div>
-              {playableGames.map((game) => (
+              {sortedPlayableGames.map((game) => (
                 <GameCard
                   key={game.id}
                   game={game}

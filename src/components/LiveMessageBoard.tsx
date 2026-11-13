@@ -27,15 +27,49 @@ function toChatMessage(message: HubMessage, from: ChatMessage["from"] = "racer")
   };
 }
 
-const fallbackMessages = (): ChatMessage[] => {
+const LOCAL_SENT_MESSAGES_KEY = "polytrack_sent_messages";
+
+function readStoredMessages(key: string): ChatMessage[] {
   try {
-    const saved = localStorage.getItem("polytrack_chat_history");
-    const parsed = saved ? JSON.parse(saved) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(localStorage.getItem(key) || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (message): message is ChatMessage =>
+        !!message &&
+        typeof message.id === "string" &&
+        typeof message.createdAt === "string" &&
+        typeof message.author === "string" &&
+        typeof message.text === "string" &&
+        typeof message.from === "string"
+    );
   } catch {
     return [];
   }
-};
+}
+
+function loadLocalSentMessages(): ChatMessage[] {
+  return readStoredMessages(LOCAL_SENT_MESSAGES_KEY);
+}
+
+function mergeMessages(...groups: ChatMessage[][]): ChatMessage[] {
+  const unique = new Map<string, ChatMessage>();
+  for (const message of groups.flat()) unique.set(message.id, message);
+  return [...unique.values()]
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .slice(-100);
+}
+
+function persistSentMessage(message: ChatMessage) {
+  try {
+    const saved = mergeMessages(loadLocalSentMessages(), [message]);
+    localStorage.setItem(LOCAL_SENT_MESSAGES_KEY, JSON.stringify(saved));
+  } catch {
+    // Private browsing or full storage must not block sending a chat message.
+  }
+}
+
+const fallbackMessages = (): ChatMessage[] =>
+  mergeMessages(readStoredMessages("polytrack_chat_history"), loadLocalSentMessages());
 
 declare global {
   interface Window {
@@ -69,7 +103,12 @@ export function LiveMessageBoard() {
     setRefreshing(true);
     try {
       const loaded = await loadMessages();
-      setMessages(loaded.map((message) => toChatMessage(message)));
+      setMessages(
+        mergeMessages(
+          loaded.map((message) => toChatMessage(message)),
+          loadLocalSentMessages()
+        )
+      );
       setError("");
     } catch {
       setError("Chat is offline. Check your connection, then retry.");
@@ -117,7 +156,8 @@ export function LiveMessageBoard() {
     try {
       const saved = await sendMessage(nickname.trim() || "Guest", cleanText);
       const message = toChatMessage(saved, "user");
-      setMessages((current) => [...current, message].slice(-100));
+      persistSentMessage(message);
+      setMessages((current) => mergeMessages(current, [message]));
       setInputText("");
       onSendCallbackRef.current?.(message);
     } catch (sendError) {

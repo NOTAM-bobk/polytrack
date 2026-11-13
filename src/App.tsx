@@ -63,7 +63,7 @@ export function App() {
               fontFamily: "system-ui, -apple-system, sans-serif",
             }}
           >
-            <a href="/" className="order-1 flex shrink-0 items-center gap-2 group">
+            <a href="/" className="order-1 hidden shrink-0 items-center gap-2 group sm:flex">
               <span
                 style={{
                   borderRadius: 36,
